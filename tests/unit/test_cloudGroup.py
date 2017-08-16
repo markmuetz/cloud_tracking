@@ -115,3 +115,5 @@ class TestCloudGroup(TestCase):
         assert group.num_merges == 3
         assert group.has_complex_rel
         assert group.num_complex_rel == 3
+        assert len(group.start_clouds) == 4
+        assert len(group.end_clouds) == 4

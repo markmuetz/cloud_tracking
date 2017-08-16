@@ -193,7 +193,7 @@ class Tracker(object):
             # Work out the highest correlation between the prev and curr cld field.
             dx, dy, amp = correlate(prev_cld_field > 0, curr_cld_field > 0)
             # Apply projection - move prev cloud field to where I think it will be based on correlation.
-            proj_cld_field_ss = np.roll(np.roll(prev_cld_field, -int(dx), axis=1), -int(dy), axis=0)
+            proj_cld_field_ss = np.roll(np.roll(prev_cld_field, -int(dx), axis=1), int(dy), axis=0)
             self.proj_cld_field[time_index] = proj_cld_field_ss
 
             if self.show_working:
