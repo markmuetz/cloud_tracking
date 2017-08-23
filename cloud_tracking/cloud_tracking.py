@@ -37,6 +37,8 @@ class Cloud(object):
         self.prev_clds = []
         self.next_clds = []
         self.is_complex_rel = False
+        self._reduced_frac = {}
+        self._frac = {}
 
     def add_next(self, cld):
         assert cld is not self
@@ -45,6 +47,23 @@ class Cloud(object):
         assert cld.time_index == self.time_index + 1
         self.next_clds.append(cld)
         cld.prev_clds.append(self)
+
+    def set_reduced_frac(self, cld, reduced_frac):
+        self._reduced_frac[cld] = reduced_frac
+
+    def set_frac(self, cld, frac):
+        self._frac[cld] = frac
+
+    def normalize_frac(self, cld, N):
+        self._frac[cld] = N * self.reduced_frac(cld)
+
+    def reduced_frac(self, cld):
+        assert cld in self.prev_clds
+        return self._reduced_frac[cld]
+
+    def frac(self, cld):
+        assert cld in self.prev_clds
+        return self._frac[cld]
 
 
 class CloudGroup(object):
@@ -125,13 +144,31 @@ class CloudGroup(object):
         """Calculate cloud fractions based on Plant (2009)
 
         See eqns 4-6."""
+        # 2 passes. On first pass, calc. reduced fractions, equiv. to bracketed term in eqn 4.
+        # On second pass, normalize each cloud which is best done by looking at next clouds.
         for cld in self.clds:
             if not cld.prev_clds:
                 continue
 
             r_c = cld.size - sum([1. * pc.size / len(pc.next_clds) for pc in cld.prev_clds])
+            f_reduceds = []
             for prev_cld in cld.prev_clds:
-                pass
+                # Equiv. to: r^c + A_i/l_i in Plant 2009.
+                reduced_frac = r_c + 1.* prev_cld.size / len(prev_cld.next_clds)
+                cld.set_reduced_frac(prev_cld, reduced_frac)
+
+        for cld in self.clds:
+            if not cld.next_clds:
+                continue
+
+            if len(cld.next_clds) == 1:
+                cld.next_clds[0].set_frac(cld, 1)
+            else:
+                reduced_fracs = [nc.reduced_frac(cld) for nc in cld.next_clds]
+                N = 1. / sum(reduced_fracs)
+                for next_cld in cld.next_clds:
+                    next_cld.normalize_frac(cld, N)
+
 
 
 class Tracker(object):

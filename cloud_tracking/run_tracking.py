@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
         for time_index in range(w.shape[0]):
             # cld_field[time_index] = ltm(w[time_index, 17].data, 1, 1., struct2d)
-            cld_field[time_index] = count_blobs_mask(w[time_index, 17].data > 1., diagonal=True)[1]
+            cld_field[time_index] = count_blobs_mask(w[time_index, 15].data > 1., diagonal=True)[1]
         cld_field_cube.data = cld_field.astype(float)
         iris.save(cld_field_cube, '../output/{}_cld_field.nc'.format(expt))
 

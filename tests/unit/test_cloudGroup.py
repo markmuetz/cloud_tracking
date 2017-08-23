@@ -41,6 +41,8 @@ class TestCloudGroup(TestCase):
         assert group.has_merges
         assert group.num_merges == 1
         assert not group.has_complex_rel
+        assert c3.frac(c1) == 1
+        assert c3.frac(c2) == 1
 
     def test_not_complex(self):
         c1, c2, c3, c4 = self.clds[0][0], self.clds[0][1], self.clds[1][0], self.clds[1][1]
@@ -117,3 +119,49 @@ class TestCloudGroup(TestCase):
         assert group.num_complex_rel == 3
         assert len(group.start_clouds) == 4
         assert len(group.end_clouds) == 4
+
+    def test_cloud_frac(self):
+        """Simple split. Cloud fracs are ratios of final sizes."""
+        ca = Cloud(1, 0, 3)
+        cb = Cloud(2, 1, 4)
+        cc = Cloud(1, 1, 5)
+
+        ca.add_next(cb)
+        ca.add_next(cc)
+        group = CloudGroup([ca, cb, cc])
+        assert group.num_splits == 1
+
+        assert cb.frac(ca) == 4./9
+        assert cc.frac(ca) == 5./9
+
+    def test_cloud_frac2(self):
+        """Cloud fracs for complex case. Fracs at end come from offline calcs."""
+        ca = Cloud(1, 0, 3)
+        cb = Cloud(2, 0, 4)
+        cc = Cloud(1, 1, 5)
+        cd = Cloud(2, 1, 6)
+        ce = Cloud(3, 1, 7)
+
+        ca.add_next(cc)
+        ca.add_next(cd)
+
+        cb.add_next(cc)
+        cb.add_next(cd)
+        cb.add_next(ce)
+
+        group = CloudGroup([ca, cb, cc, cd, ce])
+        assert not group.is_linear
+        assert group.has_splits
+        assert group.num_splits == 2
+        assert group.has_merges
+        assert group.num_merges == 2
+        assert group.has_complex_rel
+        assert group.num_complex_rel == 2
+        assert len(group.start_clouds) == 2
+        assert len(group.end_clouds) == 3
+
+        assert cc.frac(ca) == 11./25
+        assert cc.frac(cb) == 7./30
+        assert cd.frac(ca) == 14./25
+        assert cd.frac(cb) == 9./30
+        assert ce.frac(cb) == 14./30
