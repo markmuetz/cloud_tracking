@@ -168,3 +168,20 @@ class TestCloudGroup(TestCase):
         assert cd.frac(ca) == 14./25
         assert cd.frac(cb) == 9./30
         assert ce.frac(cb) == 14./30
+
+    def test_lifetimes(self):
+        c1, c2, c3, c4, c5 = self.clds[0][0], self.clds[1][0], self.clds[1][1], self.clds[2][0], self.clds[3][0]
+        c1.add_next(c2)
+        c2.add_next(c4)
+
+        c3.add_next(c4)
+        c4.add_next(c5)
+        group = CloudGroup([c1, c2, c3, c4, c5])
+        assert not group.is_linear
+        assert group.num_merges == 1
+        assert not group.has_complex_rel
+        assert c1.lifetime == 1
+        assert c2.lifetime == 2
+        assert c3.lifetime == 1
+        assert c4.lifetime == 3
+        assert c5.lifetime == 4
