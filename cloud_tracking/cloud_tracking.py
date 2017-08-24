@@ -89,10 +89,12 @@ class CloudGroup(object):
         self.clds_at_time = []
         self.start_clouds = [c for c in self.clds if not c.prev_clds]
         self.end_clouds = [c for c in self.clds if not c.next_clds]
+        self.lifetime = None
 
         self._find_splits_mergers_complex()
         self._arrange_by_time()
         self._calc_cld_fractions()
+        self._calc_cld_lifetimes()
 
     def _find_splits_mergers_complex(self):
         """Calculate how many splits, mergers and complex relationships there are."""
@@ -151,7 +153,6 @@ class CloudGroup(object):
                 continue
 
             r_c = cld.size - sum([1. * pc.size / len(pc.next_clds) for pc in cld.prev_clds])
-            f_reduceds = []
             for prev_cld in cld.prev_clds:
                 # Equiv. to: r^c + A_i/l_i in Plant 2009.
                 reduced_frac = r_c + 1.* prev_cld.size / len(prev_cld.next_clds)
@@ -169,6 +170,17 @@ class CloudGroup(object):
                 for next_cld in cld.next_clds:
                     next_cld.normalize_frac(cld, N)
 
+    def _calc_cld_lifetimes(self):
+        next_clds = self.start_clouds
+        while next_clds:
+            for cld in next_clds:
+                if cld.prev_clds:
+                    cld.lifetime = 1 + sum([pc.lifetime * cld.frac(pc) for pc in cld.prev_clds])
+                else:
+                    cld.lifetime = 1
+
+            # Flatten with list comprehension. N.B. re-assignment will not change orig, i.e. self.start_clouds.
+            next_clds = [nc for curr_cld in next_clds for nc in curr_cld.next_clds]
 
 
 class Tracker(object):

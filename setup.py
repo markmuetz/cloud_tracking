@@ -8,5 +8,6 @@ setup(
     license='',
     author='markmuetz',
     author_email='m.muetzelfeldt@pgr.reading.ac.uk',
-    description='Simple cloud tracking'
+    description='Simple cloud tracking',
+    requires=['numpy', 'iris', 'omnium']
 )

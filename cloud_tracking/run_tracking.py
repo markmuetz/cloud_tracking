@@ -13,7 +13,11 @@ if __name__ == '__main__':
              ('S4',
               '/home/markmuetz/archer_mirror/nerc/um10.7_runs/postproc/u-ap347/share/data/history/S4/atmos.236.pp1.nc')]
     for expt, fn in expts:
-        pp1 = iris.load(fn)
+        try:
+            pp1 = iris.load(fn)
+        except IOError:
+            print('File {} not present'.format(fn))
+            continue
         w = pp1[-1]
         # w at 2km.
         w2k = w[:, 17]

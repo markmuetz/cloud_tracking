@@ -133,6 +133,8 @@ class TestCloudGroup(TestCase):
 
         assert cb.frac(ca) == 4./9
         assert cc.frac(ca) == 5./9
+        assert cb.lifetime == 1 + 4./9
+        assert cc.lifetime == 1 + 5./9
 
     def test_cloud_frac2(self):
         """Cloud fracs for complex case. Fracs at end come from offline calcs."""
