@@ -43,6 +43,7 @@ class TestCloudGroup(TestCase):
         assert not group.has_complex_rel
         assert c3.frac(c1) == 1
         assert c3.frac(c2) == 1
+        assert c3.lifetime == 2
 
     def test_not_complex(self):
         c1, c2, c3, c4 = self.clds[0][0], self.clds[0][1], self.clds[1][0], self.clds[1][1]
@@ -133,8 +134,8 @@ class TestCloudGroup(TestCase):
 
         assert cb.frac(ca) == 4./9
         assert cc.frac(ca) == 5./9
-        assert cb.lifetime == 1 + 4./9
-        assert cc.lifetime == 1 + 5./9
+        assert cb.lifetime == 2
+        assert cc.lifetime == 2
 
     def test_cloud_frac2(self):
         """Cloud fracs for complex case. Fracs at end come from offline calcs."""
