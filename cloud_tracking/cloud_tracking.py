@@ -33,6 +33,7 @@ class Cloud(object):
         self.id = Cloud.newid()
         self.label = label
         self.time_index = time_index
+        self.lifetime = None
         self.size = size
         self.prev_clds = []
         self.next_clds = []
@@ -89,7 +90,6 @@ class CloudGroup(object):
         self.clds_at_time = []
         self.start_clouds = [c for c in self.clds if not c.prev_clds]
         self.end_clouds = [c for c in self.clds if not c.next_clds]
-        self.lifetime = None
 
         self._find_splits_mergers_complex()
         self._arrange_by_time()
@@ -181,8 +181,13 @@ class CloudGroup(object):
                 else:
                     cld.lifetime = 1
 
-            # Flatten with list comprehension. N.B. re-assignment will not change orig, i.e. self.start_clouds.
-            next_clds = [nc for curr_cld in next_clds for nc in curr_cld.next_clds]
+            # Flatten list, only adding those clouds for which all its prev clouds have valid lifetimes.
+            new_next_clds = []
+            for curr_cld in next_clds:
+                for new_next_cld in curr_cld.next_clds:
+                    if all([pc.lifetime for pc in new_next_cld.prev_clds]):
+                        new_next_clds.append(new_next_cld)
+            next_clds = new_next_clds
 
 
 class Tracker(object):
