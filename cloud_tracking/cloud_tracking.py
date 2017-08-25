@@ -130,7 +130,7 @@ class CloudGroup(object):
             self.is_linear = False
 
     def _arrange_by_time(self):
-        """Makes an easily accessible dict."""
+        """Make an easily accessible dict."""
         clds_at_time = defaultdict(list)
         first_time_index = int(1e99)
         last_time_index = -1
@@ -155,7 +155,7 @@ class CloudGroup(object):
             r_c = cld.size - sum([1. * pc.size / len(pc.next_clds) for pc in cld.prev_clds])
             for prev_cld in cld.prev_clds:
                 # Equiv. to: r^c + A_i/l_i in Plant 2009.
-                reduced_frac = r_c + 1.* prev_cld.size / len(prev_cld.next_clds)
+                reduced_frac = r_c + 1. * prev_cld.size / len(prev_cld.next_clds)
                 cld.set_reduced_frac(prev_cld, reduced_frac)
 
         for cld in self.clds:
@@ -193,7 +193,7 @@ class CloudGroup(object):
 class Tracker(object):
     """Tracks clouds in a cloud field.
 
-    Takes as a cloud field a 3D array of labels: (time, x, y).
+    Takes as a cloud field an iterable over time 2D array of labels: (x, y).
     Each "cloud" is defined by a different integer label.
     1st cloud is denoted by label '1' 2nd by 2...
     Calculates a direction of travel for each cloud based on the correlation
@@ -204,14 +204,14 @@ class Tracker(object):
     clouds.
     """
 
-    def __init__(self, cld_field, show_working=False):
+    def __init__(self, cld_field_iter, show_working=False):
         """
-        :param cld_field: 3D array of cloud labels.
+        :param cld_field_iter: iterable cloud field - like iris.cube.Cube.
         :param bool show_working: extra debug.
         """
-        assert (cld_field.ndim == 3)
-        self.cld_field = cld_field
-        self.proj_cld_field = np.zeros_like(self.cld_field)
+        # assert iter(cld_field_iter).next().ndim == 2
+        self.cld_field_iter = iter(cld_field_iter)
+        # self.proj_cld_field = np.zeros_like(self.cld_field)
         # List of dicts, each dict's key is the label of the cloud in cld_field.
         # Each dict's value is a cloud.
         self.clds_at_time = []
@@ -220,37 +220,34 @@ class Tracker(object):
         # List of cloud groups.
         self.groups = []
         # Helpful for debuging.
-        self.show_working = False
+        self.show_working = show_working
 
     def track(self):
         """Track clouds from one timestep to the next, building a cloud graph."""
-        # Build cloud objects.
-        for time_index in range(self.cld_field.shape[0]):
-            curr_cld_field = self.cld_field[time_index]
-            # bins range is correct - defines bin edges so need range that goes to
-            # one more than the max val, i.e. max + 2.
+        for time_index, curr_cld_field_cube in enumerate(self.cld_field_iter):
+            assert curr_cld_field_cube.ndim == 2
+            curr_cld_field = curr_cld_field_cube.data
             max_label = curr_cld_field.max()
             curr_sizes = np.histogram(curr_cld_field, range(1, max_label + 2))[0]
             curr_clds = {}
+            # Build cloud objects.
             for label in range(1, max_label + 1):
                 curr_clds[label] = Cloud(label, time_index, curr_sizes[label - 1])
 
             self.clds_at_time.append(curr_clds)
             self.all_clds.extend(curr_clds.values())
 
-        # Do tracking.
-        for time_index in range(1, self.cld_field.shape[0]):
-            print(time_index)
-            prev_cld_field = self.cld_field[time_index - 1]
-            curr_cld_field = self.cld_field[time_index]
-            prev_clds = self.clds_at_time[time_index - 1]
-            curr_clds = self.clds_at_time[time_index]
+            # On first loop - done.
+            if time_index == 0:
+                prev_cld_field = curr_cld_field
+                prev_clds = curr_clds
+                continue
 
             # Work out the highest correlation between the prev and curr cld field.
             dx, dy, amp = correlate(prev_cld_field > 0, curr_cld_field > 0)
             # Apply projection - move prev cloud field to where I think it will be based on correlation.
             proj_cld_field_ss = np.roll(np.roll(prev_cld_field, -int(dx), axis=1), int(dy), axis=0)
-            self.proj_cld_field[time_index] = proj_cld_field_ss
+            # self.proj_cld_field[time_index] = proj_cld_field_ss
 
             if self.show_working:
                 working = (curr_cld_field >= 1).astype(int)
@@ -279,6 +276,9 @@ class Tracker(object):
                         plt.pause(0.01)
                     next_cld = curr_clds[next_cld_label]
                     prev_cld.add_next(next_cld)
+
+            prev_cld_field = curr_cld_field
+            prev_clds = curr_clds
 
         return self.clds_at_time
 

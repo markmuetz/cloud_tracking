@@ -5,43 +5,59 @@ import numpy as np
 from cloud_tracking.cloud_tracking import Tracker
 
 
+class MockCube(object):
+    def __init__(self, data):
+        self.ndim = data.ndim
+        self.data = data
+
+
+def data_iterator(data):
+    for i in range(data.shape[0]):
+        yield MockCube(data[i])
+
+
 class TestTracker(TestCase):
-    def _simple_track(self):
+    @staticmethod
+    def _simple_track():
         cld_field = np.zeros((10, 10, 10), dtype=int)
         for i in range(9):
             cld_field[i, i:i+2, 5] = 1
-        return cld_field
+        return data_iterator(cld_field)
 
-    def _one_split(self):
+    @staticmethod
+    def _one_split():
         cld_field = np.zeros((2, 10, 10), dtype=int)
         cld_field[0, 4:7, 4:7] = 1
         cld_field[1, 4:7, 4] = 1
         cld_field[1, 4:7, 6] = 2
-        return cld_field
+        return data_iterator(cld_field)
 
-    def _one_merge(self):
+    @staticmethod
+    def _one_merge():
         cld_field = np.zeros((2, 10, 10), dtype=int)
         cld_field[0, 4:7, 4] = 1
         cld_field[0, 4:7, 6] = 2
         cld_field[1, 4:7, 4:7] = 1
-        return cld_field
+        return data_iterator(cld_field)
 
-    def _complex(self):
+    @staticmethod
+    def _complex():
         cld_field = np.zeros((2, 10, 10), dtype=int)
         cld_field[0, 4:7, 4] = 1
         cld_field[0, 4:7, 6] = 2
         cld_field[1, 4, 4:7] = 1
         cld_field[1, 6, 4:7] = 2
-        return cld_field
+        return data_iterator(cld_field)
 
     def test_2d_field(self):
         cld_field = np.zeros((10, 10))
         with self.assertRaises(AssertionError):
             tracker = Tracker(cld_field)
+            tracker.track()
 
     def test_simple_track(self):
-        cld_field = self._simple_track()
-        tracker = Tracker(cld_field)
+        cld_field_iter = self._simple_track()
+        tracker = Tracker(cld_field_iter)
         tracker.track()
         tracker.group()
         assert len(tracker.groups) == 1
@@ -53,8 +69,8 @@ class TestTracker(TestCase):
         assert len(group) == 9
 
     def test_one_split(self):
-        cld_field = self._one_split()
-        tracker = Tracker(cld_field)
+        cld_field_iter = self._one_split()
+        tracker = Tracker(cld_field_iter)
         tracker.track()
         tracker.group()
         assert len(tracker.groups) == 1
@@ -66,8 +82,8 @@ class TestTracker(TestCase):
         assert len(group) == 3
 
     def test_one_merge(self):
-        cld_field = self._one_merge()
-        tracker = Tracker(cld_field)
+        cld_field_iter = self._one_merge()
+        tracker = Tracker(cld_field_iter)
         tracker.track()
         tracker.group()
         assert len(tracker.groups) == 1
@@ -79,8 +95,8 @@ class TestTracker(TestCase):
         assert len(group) == 3
 
     def test_complex(self):
-        cld_field = self._complex()
-        tracker = Tracker(cld_field)
+        cld_field_iter = self._complex()
+        tracker = Tracker(cld_field_iter)
         tracker.track()
         tracker.group()
         assert len(tracker.groups) == 1
