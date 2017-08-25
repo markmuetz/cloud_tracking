@@ -6,6 +6,7 @@ import iris
 from omnium.utils import count_blobs_mask
 
 from cloud_tracking import Tracker
+from cloud_tracking_analysis import output_stats
 from displays import display_group
 
 if __name__ == '__main__':
@@ -14,6 +15,7 @@ if __name__ == '__main__':
     expts = [('S0', 'S0/atmos.2??.pp1.nc'),
              ('S4', 'S4/atmos.2??.pp1.nc')]
     for expt, fn in expts:
+        print(expt)
         try:
             pp1 = iris.load(os.path.join(basedir, fn))
         except IOError:
@@ -43,5 +45,4 @@ if __name__ == '__main__':
         for group in tracker.groups:
             # display_group(cld_field, group, animate=False)
             pass
-
-    print('Done')
+    output_stats(trackers)

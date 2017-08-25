@@ -230,7 +230,7 @@ class Tracker(object):
             max_label = curr_cld_field.max()
             curr_sizes = np.histogram(curr_cld_field, range(1, max_label + 2))[0]
             curr_clds = {}
-            # Build cloud objects.
+            # Make cloud objects.
             for label in range(1, max_label + 1):
                 curr_clds[label] = Cloud(label, time_index, curr_sizes[label - 1])
 
