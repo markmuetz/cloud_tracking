@@ -1,27 +1,39 @@
 import os
 
+from configparser import ConfigParser
+
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 
 import iris
 from omnium.utils import count_blobs_mask
 
 from cloud_tracking import Tracker
 from cloud_tracking_analysis import output_stats
-from displays import display_group
+#from displays import display_group
 
 if __name__ == '__main__':
+
+    config = ConfigParser()
+    with open('../settings.conf', 'r') as f:
+        config.read_file(f)
+    basedir = config['main']['basedir']
+    expts = config['main']['expts'].split(',')
+    filename_glob = config['main']['filename_glob']
     trackers = {}
-    basedir = '/home/markmuetz/archer_mirror/nerc/um10.7_runs/postproc/u-ap347/share/data/history/'
-    expts = [('S0', 'S0/atmos.2??.pp1.nc'),
-             ('S4', 'S4/atmos.2??.pp1.nc')]
-    for expt, fn in expts:
+    print(basedir)
+    for expt in expts:
         print(expt)
+        datadir = os.path.join(basedir, expt)
         try:
-            pp1 = iris.load(os.path.join(basedir, fn))
+            pp1 = iris.load(os.path.join(datadir, filename_glob))
         except IOError:
             print('File {} not present'.format(fn))
             continue
+        # TODO: load w properly.
         w = pp1[-10:].concatenate()[0]
+        #w = pp1[-1]
         # w at 2km.
         w2k = w[:, 17]
         cld_field = np.zeros(w2k.shape, dtype=int)
@@ -41,6 +53,7 @@ if __name__ == '__main__':
         # iris.save(proj_cld_field_cube, '../output/{}_proj_cld_field.nc'.format(expt))
 
         tracker.group()
+        #import ipdb; ipdb.set_trace()
         trackers[expt] = tracker
         for group in tracker.groups:
             # display_group(cld_field, group, animate=False)
