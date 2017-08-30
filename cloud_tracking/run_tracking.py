@@ -13,7 +13,7 @@ from cloud_tracking import Tracker
 from cloud_tracking_analysis import output_stats
 #from displays import display_group
 
-def main():
+def track_clouds():
     if not os.path.exists('output'):
         os.makedirs('output')
 
