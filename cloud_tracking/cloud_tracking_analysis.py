@@ -7,6 +7,18 @@ import pylab as plt
 def output_stats(trackers, output_dir='output', prefix=''):
     stats_for_expt = {}
     with open(os.path.join(output_dir, prefix + 'cloud_stats.txt'), 'w') as f:
+        plt.figure('lifetime_hist')
+        plt.clf()
+
+        plt.figure('linear_lifetime_hist')
+        plt.clf()
+
+        plt.figure('log_lifetime_hist')
+        plt.clf()
+
+        plt.figure('log_linear_lifetime_hist')
+        plt.clf()
+
         for expt, tracker in trackers.items():
             f.write(expt + '\n')
             f.write('Total Clouds: {}\n'.format(len(tracker.all_clds)))
