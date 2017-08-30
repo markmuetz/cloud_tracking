@@ -13,10 +13,12 @@ from cloud_tracking import Tracker
 from cloud_tracking_analysis import output_stats
 #from displays import display_group
 
-if __name__ == '__main__':
+def main():
+    if not os.path.exists('output'):
+        os.makedirs('output')
 
     config = ConfigParser()
-    with open('../settings.conf', 'r') as f:
+    with open('settings.conf', 'r') as f:
         config.read_file(f)
     basedir = config['main']['basedir']
     expts = config['main']['expts'].split(',')
@@ -29,7 +31,7 @@ if __name__ == '__main__':
         try:
             pp1 = iris.load(os.path.join(datadir, filename_glob))
         except IOError:
-            print('File {} not present'.format(fn))
+            print('File {} not present'.format(filename_glob))
             continue
         # TODO: load w properly.
         w = pp1[-10:].concatenate()[0]
@@ -44,13 +46,13 @@ if __name__ == '__main__':
             # cld_field[time_index] = ltm(w[time_index, 17].data, 1, 1., struct2d)
             cld_field[time_index] = count_blobs_mask(w[time_index, 15].data > 1., diagonal=True)[1]
         cld_field_cube.data = cld_field
-        iris.save(cld_field_cube, '../output/{}_cld_field.nc'.format(expt))
+        iris.save(cld_field_cube, 'output/{}_cld_field.nc'.format(expt))
 
         tracker = Tracker(cld_field_cube.slices_over('time'))
         tracker.track()
         # proj_cld_field_cube = cld_field_cube.copy()
         # proj_cld_field_cube.data = tracker.proj_cld_field.astype(float)
-        # iris.save(proj_cld_field_cube, '../output/{}_proj_cld_field.nc'.format(expt))
+        # iris.save(proj_cld_field_cube, 'output/{}_proj_cld_field.nc'.format(expt))
 
         tracker.group()
         #import ipdb; ipdb.set_trace()
@@ -59,3 +61,5 @@ if __name__ == '__main__':
             # display_group(cld_field, group, animate=False)
             pass
     output_stats(trackers)
+
+    return trackers

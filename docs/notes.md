@@ -53,4 +53,4 @@ output:
 Thoughts
 --------
 
-Results are *not the same* for S4. I wasn't expecting this, but they still similar.
+Results are *not the same* for S4. I wasn't expecting this, but they are still similar.

@@ -9,5 +9,6 @@ setup(
     author='markmuetz',
     author_email='m.muetzelfeldt@pgr.reading.ac.uk',
     description='Simple cloud tracking',
-    requires=['numpy', 'iris', 'omnium']
+    requires=['numpy', 'iris', 'omnium'],
+    scripts=['bin/track_clouds'],
 )

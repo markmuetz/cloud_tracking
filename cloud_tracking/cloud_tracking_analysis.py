@@ -69,25 +69,25 @@ def output_stats(trackers):
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join('../output', 'lifetime_hist.png'))
+    plt.savefig(os.path.join('output', 'lifetime_hist.png'))
 
     plt.figure('linear_lifetime_hist')
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join('../output', 'linear_lifetime_hist.png'))
+    plt.savefig(os.path.join('output', 'linear_lifetime_hist.png'))
 
     plt.figure('log_lifetime_hist')
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join('../output', 'log_lifetime_hist.png'))
+    plt.savefig(os.path.join('output', 'log_lifetime_hist.png'))
 
     plt.figure('log_linear_lifetime_hist')
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join('../output', 'log_linear_lifetime_hist.png'))
+    plt.savefig(os.path.join('output', 'log_linear_lifetime_hist.png'))
 
     return stats_for_expt
 
