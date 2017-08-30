@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 import iris
-from omnium.utils import count_blobs_mask
+from utils import label_clds
 
 from cloud_tracking import Tracker
 from cloud_tracking_analysis import output_stats
@@ -44,7 +44,7 @@ def track_clouds():
 
         for time_index in range(w.shape[0]):
             # cld_field[time_index] = ltm(w[time_index, 17].data, 1, 1., struct2d)
-            cld_field[time_index] = count_blobs_mask(w[time_index, 15].data > 1., diagonal=True)[1]
+            cld_field[time_index] = label_clds(w[time_index, 15].data > 1., diagonal=True)[1]
         cld_field_cube.data = cld_field
         iris.save(cld_field_cube, 'output/{}_cld_field.nc'.format(expt))
 
