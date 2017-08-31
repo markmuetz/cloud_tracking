@@ -1,6 +1,10 @@
 import numpy as np
 
 
+def dist(pos1, pos2):
+    return np.sqrt((pos2[0] - pos1[0])**2 + (pos2[1] - pos1[1])**2)
+
+
 def _test_indices(i, j, diagonal=False, extended=False):
     if extended:
         # Count any cells in a 5x5 area centred on the current i, j cell as being adjacent.

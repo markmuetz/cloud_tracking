@@ -34,8 +34,8 @@ def track_clouds():
             print('File {} not present'.format(filename_glob))
             continue
         # TODO: load w properly.
-        w = pp1[-10:].concatenate()[0]
-        #w = pp1[-1]
+        #w = pp1[-10:].concatenate()[0]
+        w = pp1[-1]
         # w at 2km.
         w2k = w[:, 17]
         cld_field = np.zeros(w2k.shape, dtype=int)
@@ -55,6 +55,7 @@ def track_clouds():
         # iris.save(proj_cld_field_cube, 'output/{}_proj_cld_field.nc'.format(expt))
 
         tracker.group()
+        tracker.cluster()
         #import ipdb; ipdb.set_trace()
         trackers[expt] = tracker
         for group in tracker.groups:

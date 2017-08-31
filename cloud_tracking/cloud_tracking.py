@@ -13,6 +13,7 @@ import numpy as np
 import pylab as plt
 
 from correlated_distance import correlate
+from utils import dist
 
 
 class Cloud(object):
@@ -22,10 +23,11 @@ class Cloud(object):
     def __repr__(self):
         return 'Cloud({}, {}, {}) # id={}'.format(self.label, self.time_index, self.size, self.id)
 
-    def __init__(self, label, time_index, size):
+    def __init__(self, label, time_index, pos, size):
         """
         :param int label: label from cloud field.
         :param int time_index: time_index from cloud field.
+        :param np.ndarray pos: pos as 2 element array.
         :param int size: size in grid-cells.
         """
         assert label != 0
@@ -34,6 +36,7 @@ class Cloud(object):
         self.label = label
         self.time_index = time_index
         self.lifetime = None
+        self.pos = pos
         self.size = size
         self.prev_clds = []
         self.next_clds = []
@@ -65,6 +68,12 @@ class Cloud(object):
     def frac(self, cld):
         assert cld in self.prev_clds
         return self._frac[cld]
+
+
+class Cluster(object):
+    """Collection of clouds that are close to eachother at given timestep."""
+    def __init__(self, clds):
+        self.clds = clds
 
 
 class CloudGroup(object):
@@ -219,6 +228,9 @@ class Tracker(object):
         self.all_clds = []
         # List of cloud groups.
         self.groups = []
+        # List of list of clouds.
+        # First list is time indexed clusters, 2nd is cluster
+        self.clusters_at_time = []
         # Helpful for debuging.
         self.show_working = show_working
 
@@ -232,7 +244,9 @@ class Tracker(object):
             curr_clds = {}
             # Make cloud objects.
             for label in range(1, max_label + 1):
-                curr_clds[label] = Cloud(label, time_index, curr_sizes[label - 1])
+                # TODO: hardcoded dx.
+                pos = np.array(map(np.mean, np.where(curr_cld_field == label))) * 2000 # x, y pos in m.
+                curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
 
             self.clds_at_time.append(curr_clds)
             self.all_clds.extend(curr_clds.values())
@@ -298,6 +312,37 @@ class Tracker(object):
                         print('error')
                     found_clds[found_cld.id] = found_cld
         return self.groups
+
+    def cluster(self):
+        for time_index, curr_clds in enumerate(self.clds_at_time):
+            clustered_clouds = {}
+            clusters = []
+            for cld in curr_clds.values():
+                if cld.id in clustered_clouds:
+                    continue
+                clustered_clouds[cld.id] = cld
+                cluster = [cld]
+                test_clds = [cld]
+                while test_clds:
+                    next_test_clds = []
+                    for test_cld in test_clds:
+                        for other_cld in curr_clds.values():
+                            if other_cld in cluster:
+                                continue
+
+                            # TODO: hardcoded.
+                            if dist(test_cld.pos, other_cld.pos) < 20e3:
+                                clustered_clouds[other_cld.id] = other_cld
+                                cluster.append(other_cld)
+                                next_test_clds.append(other_cld)
+                    test_clds = next_test_clds
+                # This is a bit of a clusterf#!?.
+                clusters.append(Cluster(cluster))
+            self.clusters_at_time.append(clusters)
+        return self.clusters_at_time
+
+
+
 
     @staticmethod
     def _find_connected_clouds(cld):
