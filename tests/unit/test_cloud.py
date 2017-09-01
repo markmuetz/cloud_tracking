@@ -6,11 +6,12 @@ from cloud_tracking.cloud_tracking import Cloud
 class TestCloud(TestCase):
     def setUp(self):
         super(TestCloud, self).setUp()
-        self.clds = [Cloud(1, 0, 1), Cloud(2, 0, 1), Cloud(1, 1, 1), Cloud(2, 1, 1)]
+        self.clds = [Cloud(1, 0, [1, 2], 1), Cloud(2, 0, [1, 2], 1),
+                     Cloud(1, 1, [1, 2], 1), Cloud(2, 1, [1, 2], 1)]
 
     def test_ctor_label_eq_(self):
         with self.assertRaises(AssertionError):
-            Cloud(0, 0, 1)
+            Cloud(0, 0, [1, 2], 1)
 
     def test_add_next_same_cld(self):
         c1 = self.clds[0]

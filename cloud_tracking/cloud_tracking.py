@@ -331,7 +331,7 @@ class Tracker(object):
                                 continue
 
                             # TODO: hardcoded.
-                            if dist(test_cld.pos, other_cld.pos) < 20e3:
+                            if dist(test_cld.pos, other_cld.pos) < 10e3:
                                 clustered_clouds[other_cld.id] = other_cld
                                 cluster.append(other_cld)
                                 next_test_clds.append(other_cld)
@@ -340,9 +340,6 @@ class Tracker(object):
                 clusters.append(Cluster(cluster))
             self.clusters_at_time.append(clusters)
         return self.clusters_at_time
-
-
-
 
     @staticmethod
     def _find_connected_clouds(cld):

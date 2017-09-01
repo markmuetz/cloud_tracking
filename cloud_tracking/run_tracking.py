@@ -1,10 +1,11 @@
 import os
-
+import logging
 from configparser import ConfigParser
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+if not os.getenv('DISPLAY', False):
+    matplotlib.use('Agg')
 
 import iris
 from utils import label_clds
@@ -12,6 +13,13 @@ from utils import label_clds
 from cloud_tracking import Tracker
 from cloud_tracking_analysis import output_stats
 #from displays import display_group
+
+logger = logging.getLogger('ct.track')
+logger.setLevel('DEBUG')
+sh = logging.StreamHandler()
+sh.setFormatter(logging.Formatter('%(levelname)8s: %(message)s'))
+logger.addHandler(sh)
+
 
 def track_clouds():
     if not os.path.exists('output'):
@@ -24,20 +32,26 @@ def track_clouds():
     expts = config['main']['expts'].split(',')
     filename_glob = config['main']['filename_glob']
     trackers = {}
-    print(basedir)
+    logger.debug(basedir)
     for expt in expts:
-        print(expt)
+        logger.debug(expt)
         datadir = os.path.join(basedir, expt)
         try:
             pp1 = iris.load(os.path.join(datadir, filename_glob))
         except IOError:
-            print('File {} not present'.format(filename_glob))
+            logger.warn('File {} not present'.format(filename_glob))
             continue
-        # TODO: load w properly.
-        #w = pp1[-10:].concatenate()[0]
-        w = pp1[-1]
+
+        w_cubes = []
+        for stash, cube in [(c.attributes['STASH'], c) for c in pp1]:
+            if stash.section == 0 and stash.item == 150:
+                w_cubes.append(cube)
+
+        w = iris.cube.CubeList(w_cubes).concatenate_cube()
+        # w = pp1[-1]
         # w at 2km.
         w2k = w[:, 17]
+        logger.debug(w2k.coord('level_height').points[0])
         cld_field = np.zeros(w2k.shape, dtype=int)
         cld_field_cube = w2k.copy()
         cld_field_cube.rename('cloud_field')

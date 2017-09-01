@@ -9,7 +9,7 @@ class TestCloudGroup(TestCase):
         self.clds = []
         # Create a 6 by 4 list of lists for use in subsequent tests.
         for time_index in range(6):
-            self.clds.append([Cloud(label, time_index, label) for label in range(1, 5)])
+            self.clds.append([Cloud(label, time_index, [label, 5], label) for label in range(1, 5)])
 
     def test_simple(self):
         c1, c2 = self.clds[0][0], self.clds[1][0]
@@ -123,9 +123,9 @@ class TestCloudGroup(TestCase):
 
     def test_cloud_frac(self):
         """Simple split. Cloud fracs are ratios of final sizes."""
-        ca = Cloud(1, 0, 3)
-        cb = Cloud(2, 1, 4)
-        cc = Cloud(1, 1, 5)
+        ca = Cloud(1, 0, [1, 2], 3)
+        cb = Cloud(2, 1, [1, 2], 4)
+        cc = Cloud(1, 1, [1, 2], 5)
 
         ca.add_next(cb)
         ca.add_next(cc)
@@ -139,11 +139,11 @@ class TestCloudGroup(TestCase):
 
     def test_cloud_frac2(self):
         """Cloud fracs for complex case. Fracs at end come from offline calcs."""
-        ca = Cloud(1, 0, 3)
-        cb = Cloud(2, 0, 4)
-        cc = Cloud(1, 1, 5)
-        cd = Cloud(2, 1, 6)
-        ce = Cloud(3, 1, 7)
+        ca = Cloud(1, 0, [1, 2], 3)
+        cb = Cloud(2, 0, [1, 2], 4)
+        cc = Cloud(1, 1, [1, 2], 5)
+        cd = Cloud(2, 1, [1, 2], 6)
+        ce = Cloud(3, 1, [1, 2], 7)
 
         ca.add_next(cc)
         ca.add_next(cd)
