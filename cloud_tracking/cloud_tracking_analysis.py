@@ -71,6 +71,9 @@ def output_stats(trackers, output_dir='output', prefix=''):
         #plt.hist(lifetimes[lifetimes > 20], bins=40, range=(0, 400), normed=True, histtype='step', label=expt)
 
         for lifetimes, plt_name in zip([all_lifetimes, linear_lifetimes, nonlinear_lifetimes], plt_names):
+            if not lifetimes:
+                print('No lifetimes for {}'.format(plt_name))
+                continue
             plt.figure(plt_name)
             plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt)
 
