@@ -73,15 +73,6 @@ def correlate(s1, s2, method=1):
     dx = ind[1][0]
     dy = ind[0][0]
 
-    # 1hour -> 25km(leno/2) ; 5mins -> 2km(leno/10) : 10mins -> 4km(leno/5)
-    # cv = leno/2 # Org. from Thorld = 25km
-    cv = leno / 5  # For 200m grids = 20km
-    if dx > cv:
-        # dx = dx - leno # Org. from Thorld
-        dx = dx - (cv * (dx / cv))
-    if dy > cv:
-        # dy = dy - leno # Org. from Thorld
-        dy = dy - (cv * (dy / cv))
     amp = val / normval
 
     return dx, dy, amp
