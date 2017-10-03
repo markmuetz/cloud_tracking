@@ -233,11 +233,14 @@ class Tracker(object):
         self.clusters_at_time = []
         # Helpful for debuging.
         self.show_working = show_working
+        if self.show_working:
+            plt.ion()
 
     def track(self):
         """Track clouds from one timestep to the next, building a cloud graph."""
         for time_index, curr_cld_field_cube in enumerate(self.cld_field_iter):
             assert curr_cld_field_cube.ndim == 2
+            print(time_index)
             curr_cld_field = curr_cld_field_cube.data
             max_label = curr_cld_field.max()
             curr_sizes = np.histogram(curr_cld_field, range(1, max_label + 2))[0]
@@ -245,7 +248,7 @@ class Tracker(object):
             # Make cloud objects.
             for label in range(1, max_label + 1):
                 # TODO: hardcoded dx.
-                pos = np.array(map(np.mean, np.where(curr_cld_field == label))) * 2000 # x, y pos in m.
+                pos = np.array(map(np.mean, np.where(curr_cld_field == label))) * 1000 # x, y pos in m.
                 curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
 
             self.clds_at_time.append(curr_clds)
@@ -266,8 +269,9 @@ class Tracker(object):
             if self.show_working:
                 working = (curr_cld_field >= 1).astype(int)
                 working += (proj_cld_field_ss >= 1).astype(int) * 2
-                # plt.imshow(working, interpolation='nearest')
-                # plt.pause(1)
+                plt.imshow(working, interpolation='nearest')
+                plt.show()
+                plt.pause(1)
 
             # Work out overlaps between projected forward previous cloud field and the current field.
             prev_labels = range(1, prev_cld_field.max() + 1)
