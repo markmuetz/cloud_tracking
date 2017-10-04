@@ -215,11 +215,11 @@ class Tracker(object):
     Builds up a graph of clouds, and optionally converts these into groups of connected
     clouds.
     """
-
-    def __init__(self, cld_field_iter, show_working=False):
+    def __init__(self, cld_field_iter, store_working=False, store_detailed_working=False):
         """
         :param cld_field_iter: iterable cloud field - like iris.cube.Cube.
-        :param bool show_working: extra debug.
+        :param bool store_working: extra debug.
+        :param bool store_detailed_working: extra extra debug.
         """
         # assert iter(cld_field_iter).next().ndim == 2
         self.cld_field_iter = iter(cld_field_iter)
@@ -235,10 +235,14 @@ class Tracker(object):
         # First list is time indexed clusters, 2nd is cluster
         self.clusters_at_time = []
         # Helpful for debuging.
-        self.show_working = show_working
+        self.store_working = store_working
+        self.store_detailed_working = store_detailed_working
 
     def track(self):
         """Track clouds from one timestep to the next, building a cloud graph."""
+        if self.store_working:
+            self.all_working = {'working': [], 'detailed_working': []}
+
         for time_index, curr_cld_field_cube in enumerate(self.cld_field_iter):
             assert curr_cld_field_cube.ndim == 2
             logger.debug('Time index: {}'.format(time_index))
@@ -269,12 +273,10 @@ class Tracker(object):
             proj_cld_field_ss = np.roll(np.roll(prev_cld_field, int(dx), axis=1), int(dy), axis=0)
             # self.proj_cld_field[time_index] = proj_cld_field_ss
 
-            if self.show_working:
+            if self.store_working:
                 working = (curr_cld_field >= 1).astype(int)
                 working += (proj_cld_field_ss >= 1).astype(int) * 2
-                plt.imshow(working, interpolation='nearest')
-                plt.show()
-                plt.pause(1)
+                self.all_working['working'].append(working)
 
             # Work out overlaps between projected forward previous cloud field and the current field.
             prev_labels = range(1, prev_cld_field.max() + 1)
@@ -288,13 +290,11 @@ class Tracker(object):
 
                 # Build cloud graph.
                 for next_cld_label in overlapping_labels:
-                    if self.show_working:
+                    if self.store_detailed_working:
                         working = (curr_cld_field == next_cld_label).astype(int)
                         working += (proj_cld_field_ss == prev_label).astype(int) * 2
                         working += (curr_cld_field >= 1).astype(int)
-                        plt.clf()
-                        plt.imshow(working, interpolation='nearest')
-                        plt.pause(0.01)
+                        self.all_working['detailed_working'].append(working)
                     next_cld = curr_clds[next_cld_label]
                     prev_cld.add_next(next_cld)
 
