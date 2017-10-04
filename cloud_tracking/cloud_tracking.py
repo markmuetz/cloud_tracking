@@ -7,6 +7,7 @@ the 2D domain - this means that the approach here is only valid if there is litt
 over the domain. This is the case for e.g. a CRM or LES with a mean wind profile.
 """
 import itertools
+from logging import getLogger
 from collections import defaultdict
 
 import numpy as np
@@ -14,6 +15,8 @@ import pylab as plt
 
 from correlated_distance import correlate
 from utils import dist
+
+logger = getLogger('ct.tracking')
 
 
 class Cloud(object):
@@ -233,14 +236,12 @@ class Tracker(object):
         self.clusters_at_time = []
         # Helpful for debuging.
         self.show_working = show_working
-        if self.show_working:
-            plt.ion()
 
     def track(self):
         """Track clouds from one timestep to the next, building a cloud graph."""
         for time_index, curr_cld_field_cube in enumerate(self.cld_field_iter):
             assert curr_cld_field_cube.ndim == 2
-            print(time_index)
+            logger.debug('Time index: {}'.format(time_index))
             curr_cld_field = curr_cld_field_cube.data
             max_label = curr_cld_field.max()
             curr_sizes = np.histogram(curr_cld_field, range(1, max_label + 2))[0]
@@ -251,6 +252,7 @@ class Tracker(object):
                 pos = np.array(map(np.mean, np.where(curr_cld_field == label))) * 1000 # x, y pos in m.
                 curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
 
+            logger.debug('Found {} clouds'.format(max_label))
             self.clds_at_time.append(curr_clds)
             self.all_clds.extend(curr_clds.values())
 
@@ -262,6 +264,7 @@ class Tracker(object):
 
             # Work out the highest correlation between the prev and curr cld field.
             dx, dy, amp = correlate(prev_cld_field > 0, curr_cld_field > 0)
+            logger.debug('dx, dy, amp: {}, {}, {}'.format(dx, dy, amp))
             # Apply projection - move prev cloud field to where I think it will be based on correlation.
             proj_cld_field_ss = np.roll(np.roll(prev_cld_field, int(dx), axis=1), int(dy), axis=0)
             # self.proj_cld_field[time_index] = proj_cld_field_ss
