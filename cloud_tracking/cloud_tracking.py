@@ -11,7 +11,6 @@ from logging import getLogger
 from collections import defaultdict
 
 import numpy as np
-import pylab as plt
 
 from correlated_distance import correlate
 from utils import dist
@@ -316,7 +315,7 @@ class Tracker(object):
                 self.groups.append(group)
                 for found_cld in group.clds:
                     if found_cld.id in found_clds:
-                        print('error')
+                        logger.error('Found multiple cloud ids: {}'.format(flound_cld.id))
                     found_clds[found_cld.id] = found_cld
         return self.groups
 

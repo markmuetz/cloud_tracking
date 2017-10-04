@@ -1,10 +1,14 @@
 import os
+from logging import getLogger
 from collections import OrderedDict
 
 import numpy as np
 import pylab as plt
 
-def output_stats_to_file(expt, output_dir, filename, stats):
+logger = getLogger('ct.tr_analysis')
+
+
+def output_stats_to_file(expt, output_dir, filename, tracker, stats):
     with open(os.path.join(output_dir, filename), 'w') as f:
         f.write(expt + '\n')
         f.write('Total Clouds: {}\n'.format(len(tracker.all_clds)))
@@ -12,6 +16,8 @@ def output_stats_to_file(expt, output_dir, filename, stats):
 
         f.write('group_type,count,num_clouds,mean_lifetime\n')
         for key, stat in stats.items():
+            if not isinstance(stat, dict):
+                continue
             if stat['num_clouds']:
                 mean_lifetime = 1. * stat['total_lifetimes'] / stat['num_cycles']
             else:
@@ -19,13 +25,13 @@ def output_stats_to_file(expt, output_dir, filename, stats):
             f.write('{}, {}, {}, {}\n'.format(key, stat['count'], stat['num_clouds'], mean_lifetime))
 
 
-def plot_stats(expt, output_dir, prefix, stats):
+def plot_stats(expt, output_dir, prefix, all_stats):
     plt_names = ['all_lifetimes', 'linear_lifetimes', 'nonlinear_lifetimes']
-    for stat in stats:
+    for stats in all_stats:
         for plt_name in plt_names:
-            lifetimes = stat[plt_name]
+            lifetimes = stats[plt_name]
             if not len(lifetimes):
-                print('No lifetimes for {}'.format(plt_name))
+                logger.warn('No lifetimes for {}'.format(plt_name))
                 continue
             plt.figure(plt_name)
             plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt)
@@ -79,6 +85,8 @@ def generate_stats(expt, tracker):
         stat['num_cycles'] += len(group.end_clouds)
         stat['total_lifetimes'] += sum(curr_lifetimes) * 5
 
-    stat['all_lifetimes'] = np.array(all_lifetimes) * 5
-    stat['linear_lifetimes'] = np.array(linear_lifetimes) * 5
-    stat['nonlinear_lifetimes'] = np.array(nonlinear_lifetimes) * 5
+    stats['all_lifetimes'] = np.array(all_lifetimes) * 5
+    stats['linear_lifetimes'] = np.array(linear_lifetimes) * 5
+    stats['nonlinear_lifetimes'] = np.array(nonlinear_lifetimes) * 5
+
+    return stats
