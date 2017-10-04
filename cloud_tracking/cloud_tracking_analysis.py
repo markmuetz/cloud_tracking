@@ -27,6 +27,10 @@ def output_stats_to_file(expt, output_dir, filename, tracker, stats):
 
 def plot_stats(expt, output_dir, prefix, all_stats):
     plt_names = ['all_lifetimes', 'linear_lifetimes', 'nonlinear_lifetimes']
+    for plt_name in plt_names:
+        plt.figure(plt_name)
+        plt.clf()
+
     for stats in all_stats:
         for plt_name in plt_names:
             lifetimes = stats[plt_name]
