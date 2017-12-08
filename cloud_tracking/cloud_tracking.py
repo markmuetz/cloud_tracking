@@ -12,15 +12,15 @@ from collections import defaultdict
 
 import numpy as np
 
-from correlated_distance import correlate
-from utils import dist
+from cloud_tracking.correlated_distance import correlate
+from cloud_tracking.utils import dist
 
 logger = getLogger('ct.tracking')
 
 
 class Cloud(object):
     """Simple representation of a cloud."""
-    newid = itertools.count().next
+    newid = itertools.count()
 
     def __repr__(self):
         return 'Cloud({}, {}, {}) # id={}'.format(self.label, self.time_index, self.size, self.id)
@@ -34,7 +34,7 @@ class Cloud(object):
         """
         assert label != 0
         # Auto-incrementing ID.
-        self.id = Cloud.newid()
+        self.id = next(Cloud.newid)
         self.label = label
         self.time_index = time_index
         self.lifetime = None

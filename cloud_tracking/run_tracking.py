@@ -8,10 +8,10 @@ if not os.getenv('DISPLAY', False):
     matplotlib.use('Agg')
 
 import iris
-from utils import label_clds
 
-from cloud_tracking import Tracker
-from cloud_tracking_analysis import output_stats
+from cloud_tracking.utils import label_clds
+from cloud_tracking.cloud_tracking import Tracker
+from cloud_tracking.cloud_tracking_analysis import output_stats
 #from displays import display_group
 
 logger = logging.getLogger('ct.track')
