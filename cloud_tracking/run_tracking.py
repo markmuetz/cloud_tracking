@@ -4,15 +4,16 @@ from configparser import ConfigParser
 
 import numpy as np
 import matplotlib
-if not os.getenv('DISPLAY', False):
-    matplotlib.use('Agg')
+
+#if not os.getenv('DISPLAY', False):
+matplotlib.use('Agg')
 
 import iris
 from utils import label_clds
 
 from cloud_tracking import Tracker
-from cloud_tracking_analysis import output_stats
-#from displays import display_group
+from cloud_tracking_analysis import (output_stats_to_file, generate_stats,
+                                     plot_stats)
 
 logger = logging.getLogger('ct.track')
 logger.setLevel('DEBUG')
@@ -29,8 +30,13 @@ def track_clouds():
     with open('settings.conf', 'r') as f:
         config.read_file(f)
     basedir = config['main']['basedir']
+    results_dir = config['main']['results_dir']
     expts = config['main']['expts'].split(',')
     filename_glob = config['main']['filename_glob']
+
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
     trackers = {}
     logger.debug(basedir)
     for expt in expts:
@@ -57,6 +63,7 @@ def track_clouds():
         cld_field_cube.rename('cloud_field')
 
         for time_index in range(w.shape[0]):
+            logger.debug(time_index)
             # cld_field[time_index] = ltm(w[time_index, 17].data, 1, 1., struct2d)
             cld_field[time_index] = label_clds(w[time_index, 15].data > 1., diagonal=True)[1]
         cld_field_cube.data = cld_field
@@ -75,6 +82,12 @@ def track_clouds():
         for group in tracker.groups:
             # display_group(cld_field, group, animate=False)
             pass
-    output_stats(trackers)
+
+    for expt in expts:
+        tracker = trackers[expt]
+        stats = generate_stats(expt, tracker)
+        filename = 'cloud_tracking_{}.'.format(expt)
+        output_stats_to_file(expt, results_dir, filename + 'txt', tracker, stats)
+        plot_stats(expt, results_dir, filename, [stats])
 
     return trackers
