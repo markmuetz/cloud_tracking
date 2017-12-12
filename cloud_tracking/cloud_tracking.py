@@ -252,7 +252,7 @@ class Tracker(object):
             # Make cloud objects.
             for label in range(1, max_label + 1):
                 # TODO: hardcoded dx.
-                pos = np.array(map(np.mean, np.where(curr_cld_field == label))) * 1000 # x, y pos in m.
+                pos = np.array(list(map(np.mean, np.where(curr_cld_field == label)))) * 1000 # x, y pos in m.
                 curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
 
             logger.debug('Found {} clouds'.format(max_label))
