@@ -113,7 +113,7 @@ class CloudGroup(object):
             if len(cld.next_clds) >= 2:
                 self.has_splits = True
                 self.num_splits += 1
-                if cld.next_clds >= 2:
+                if len(cld.next_clds) >= 2:
                     # Check for complex rels, can only be true if cld.next_clds >= 2.
                     # Look for all current clouds, that is clouds at the same time_index as cld.
                     # For each of those, check to see whether any two of its clouds are the same as any to of cld's.
