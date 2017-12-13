@@ -1,5 +1,56 @@
-General
-=======
+ARCHER
+======
+
+Create a conda env
+------------------
+
+Create a conda env and install `iris` and dependencies, only do this once:
+
+    module load anaconda/python3
+    conda create -n track_clouds_env python=3.6
+    source activate track_clouds_env
+
+    conda install -c conda-forge iris
+    # Not sure why this does not get installed.
+    pip install pyshp
+
+Install cloud_tracking from repo
+--------------------------------
+
+Do directly after last steps (i.e. with track_clouds_env activated):
+
+    # Get copy of code.
+    cd $WORKDIR
+    git clone https://github.com/markmuetz/cloud_tracking
+    
+    # Install. Puts script "track_clouds" into path.
+    cd cloud_tracking
+    pip install -e .
+    
+    # Create dir to run from.
+    cd $WORKDIR
+    mkdir track_clouds
+    cd track_clouds
+    cp $WORKDIR/cloud_tracking/settings.conf.tpl settings.conf
+
+Run code
+--------
+
+    # Load env.
+    module load anaconda/python3
+    source activate track_clouds_env
+
+    # Run with default settings, puts results in 'results' by default.
+    # Note this runs with results from mmuetz's previous runs.
+    track_clouds
+
+    # Edit settings.conf to point at your UM output.
+    # You may also need to edit:
+    # $WORKDIR/cloud_tracking/cloud_tracking/run_tracking.py
+    vim settings.conf
+
+Local linux
+===========
 
     # Get copy of code.
     cd ~
@@ -11,33 +62,9 @@ General
     
     # Create dir for settings/output.
     cd ~
-    mkdir cloud_tracking_output
-    cd cloud_tracking_output
+    mkdir track_clouds
+    cd track_clouds
     cp ~/cloud_tracking/settings.conf.tpl settings.conf
-    # Edit settings.conf
-    vim settings.conf
-    
-    # Run.
-    track_clouds
-    
-
-ARCHER
-------
-
-    # Get copy of code. Needs symlinks for work/nerc.
-    cd ~/work
-    git clone https://github.com/markmuetz/cloud_tracking
-    
-    # Install. Puts script "track_clouds" into path.
-    # Have to install locally.
-    cd cloud_tracking
-    pip install -e . --user
-    
-    # Create dir for settings/output.
-    cd ~/nerc
-    mkdir cloud_tracking_output
-    cd cloud_tracking_output
-    cp ~/work/cloud_tracking/settings.conf.tpl settings.conf
     # Edit settings.conf
     vim settings.conf
     
