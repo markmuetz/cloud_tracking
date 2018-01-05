@@ -1,4 +1,7 @@
 .idea/
 .*.swp
 *.pyc
+build/
+dist/
+docs/_build/
 cloud_tracking.egg-info/

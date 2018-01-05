@@ -60,7 +60,7 @@ def track_clouds():
         # Join cubes if there are multiple.
         w = iris.cube.CubeList(w_cubes).concatenate_cube()
         w_2d_slice = w[:, level]
-        logger.info(f"Using height: {w_2d_slice.coord('level_height').points[0]} m")
+        logger.info("Using height: {} m".format(w_2d_slice.coord('level_height').points[0]))
 
         # Create cloud field array.
         cld_field = np.zeros(w_2d_slice.shape, dtype=int)
@@ -69,7 +69,7 @@ def track_clouds():
 
         # Take threshold of w > 1. and find contiguous clouds (incl. diagonal).
         for time_index in range(w.shape[0]):
-            logger.debug(f'time_index = {time_index}')
+            logger.debug('time_index = {}'.format(time_index))
             cld_field[time_index] = label_clds(w[time_index, level].data > 1., diagonal=True)[1]
 
         cld_field_cube.data = cld_field
