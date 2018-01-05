@@ -5,6 +5,7 @@ from configparser import ConfigParser
 import numpy as np
 import matplotlib
 
+# Not working on serial queue for some reason.
 #if not os.getenv('DISPLAY', False):
 matplotlib.use('Agg')
 
@@ -16,6 +17,7 @@ from cloud_tracking.cloud_tracking_analysis import (output_stats_to_file,
                                                     generate_stats,
                                                     plot_stats)
 
+# Setup logger.
 logger = logging.getLogger('ct.track')
 logger.setLevel('DEBUG')
 sh = logging.StreamHandler()
@@ -24,9 +26,7 @@ logger.addHandler(sh)
 
 
 def track_clouds():
-    if not os.path.exists('output'):
-        os.makedirs('output')
-
+    # Read config.
     config = ConfigParser()
     with open('settings.conf', 'r') as f:
         config.read_file(f)
@@ -34,56 +34,55 @@ def track_clouds():
     results_dir = config['main']['results_dir']
     expts = config['main']['expts'].split(',')
     filename_glob = config['main']['filename_glob']
+    level = config['main'].getint('level')
 
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
 
     trackers = {}
     logger.debug(basedir)
+
     for expt in expts:
         logger.debug(expt)
         datadir = os.path.join(basedir, expt)
         try:
-            pp1 = iris.load(os.path.join(datadir, filename_glob))
+            cubes = iris.load(os.path.join(datadir, filename_glob))
         except IOError:
             logger.warn('File {} not present'.format(filename_glob))
             continue
 
+        # Search through and find w.
         w_cubes = []
-        for stash, cube in [(c.attributes['STASH'], c) for c in pp1]:
+        for stash, cube in [(c.attributes['STASH'], c) for c in cubes]:
             if stash.section == 0 and stash.item == 150:
                 w_cubes.append(cube)
 
+        # Join cubes if there are multiple.
         w = iris.cube.CubeList(w_cubes).concatenate_cube()
-        # w = pp1[-1]
-        # w at 2km.
-        w2k = w[:, 17]
-        logger.debug(w2k.coord('level_height').points[0])
-        cld_field = np.zeros(w2k.shape, dtype=int)
-        cld_field_cube = w2k.copy()
+        w_2d_slice = w[:, level]
+        logger.info(f"Using height: {w_2d_slice.coord('level_height').points[0]} m")
+
+        # Create cloud field array.
+        cld_field = np.zeros(w_2d_slice.shape, dtype=int)
+        cld_field_cube = w_2d_slice.copy()
         cld_field_cube.rename('cloud_field')
 
+        # Take threshold of w > 1. and find contiguous clouds (incl. diagonal).
         for time_index in range(w.shape[0]):
-            logger.debug(time_index)
-            # cld_field[time_index] = ltm(w[time_index, 17].data, 1, 1., struct2d)
-            cld_field[time_index] = label_clds(w[time_index, 15].data > 1., diagonal=True)[1]
-        cld_field_cube.data = cld_field
-        iris.save(cld_field_cube, 'output/{}_cld_field.nc'.format(expt))
+            logger.debug(f'time_index = {time_index}')
+            cld_field[time_index] = label_clds(w[time_index, level].data > 1., diagonal=True)[1]
 
+        cld_field_cube.data = cld_field
+
+        # Perform tracking.
         tracker = Tracker(cld_field_cube.slices_over('time'))
         tracker.track()
-        # proj_cld_field_cube = cld_field_cube.copy()
-        # proj_cld_field_cube.data = tracker.proj_cld_field.astype(float)
-        # iris.save(proj_cld_field_cube, 'output/{}_proj_cld_field.nc'.format(expt))
-
         tracker.group()
         tracker.cluster()
-        #import ipdb; ipdb.set_trace()
-        trackers[expt] = tracker
-        for group in tracker.groups:
-            # display_group(cld_field, group, animate=False)
-            pass
 
+        trackers[expt] = tracker
+
+    # Output results.
     for expt in expts:
         tracker = trackers[expt]
         stats = generate_stats(expt, tracker)
