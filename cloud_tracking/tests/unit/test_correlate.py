@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from correlated_distance import correlate
+from cloud_tracking.correlated_distance import correlate
 
 
 class TestCorrelate(TestCase):
