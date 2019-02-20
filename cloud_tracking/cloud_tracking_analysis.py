@@ -48,7 +48,7 @@ def plot_stats(expt, output_dir, prefix, all_stats):
             centres = (bins[1:] + bins[:-1]) / 2
             heights = (hist / all_lifetimes_sum) / widths
             plt.bar(centres, heights, widths, label=expt)
-            plt.ylim((0, 400))
+            plt.xlim((0, 400))
 
             # plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt)
 
