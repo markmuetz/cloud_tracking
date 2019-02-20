@@ -30,18 +30,31 @@ def plot_stats(expt, output_dir, prefix, all_stats):
     for plt_name in plt_names:
         plt.figure(plt_name)
         plt.clf()
+        plt.figure('log_' + plt_name)
+        plt.clf()
 
     for stats in all_stats:
+        # Note - normalization done w.r.t. all_lifetimes so that all figs have equiv axes.
+        all_lifetimes_sum = stats['all_lifetimes'].sum()
         for plt_name in plt_names:
             lifetimes = stats[plt_name]
             if not len(lifetimes):
-                logger.warn('No lifetimes for {}'.format(plt_name))
+                logger.warning('No lifetimes for {}'.format(plt_name))
                 continue
+
             plt.figure(plt_name)
-            plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt)
+            hist, bins = np.histogram(lifetimes, bins=80)
+            widths = bins[1:] - bins[:-1]
+            centres = (bins[1:] + bins[:-1]) / 2
+            heights = (hist / all_lifetimes_sum) / widths
+            plt.bar(centres, heights, widths, label=expt)
+            plt.ylim((0, 400))
+
+            # plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt)
 
             plt.figure('log_' + plt_name)
-            plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, log=True, histtype='step', label=expt)
+            plt.bar(centres, heights, widths, log=True, label=expt)
+            plt.ylim((0, 400))
 
     for plt_name in plt_names:
         plt.figure(plt_name)
