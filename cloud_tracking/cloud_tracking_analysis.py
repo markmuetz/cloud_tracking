@@ -33,9 +33,28 @@ def plot_stats(expt, output_dir, prefix, all_stats):
         plt.figure('log_' + plt_name)
         plt.clf()
 
+    plt.figure('combined')
+    plt.clf()
+    plt.figure('combined_plot')
+    plt.clf()
+    plt.figure('combined_cdf')
+    plt.clf()
+
+    combined_kwargs = {
+        'all_lifetimes': {'label': 'all ' + expt, 'color': 'grey'},
+        'linear_lifetimes': {'label': 'linear', 'edgecolor': 'g', 'fill': False},
+        'nonlinear_lifetimes': {'label': 'nonlinear', 'edgecolor': 'r', 'fill': False},
+    }
+
+    combined_plot_kwargs = {
+        'all_lifetimes': {'label': 'all ' + expt, 'color': 'grey'},
+        'linear_lifetimes': {'label': 'linear', 'color': 'g'},
+        'nonlinear_lifetimes': {'label': 'nonlinear', 'color': 'r'},
+    }
+
     for stats in all_stats:
         # Note - normalization done w.r.t. all_lifetimes so that all figs have equiv axes.
-        all_lifetimes_sum = stats['all_lifetimes'].sum()
+        all_lifetimes_hist_sum = np.histogram(stats['all_lifetimes'], bins=80, range=(0, 400))[0].sum()
         max_height = 0
         for plt_name in plt_names:
             lifetimes = stats[plt_name]
@@ -47,7 +66,7 @@ def plot_stats(expt, output_dir, prefix, all_stats):
             hist, bins = np.histogram(lifetimes, bins=80, range=(0, 400))
             widths = bins[1:] - bins[:-1]
             centres = (bins[1:] + bins[:-1]) / 2
-            heights = (hist / all_lifetimes_sum) / widths
+            heights = (hist / all_lifetimes_hist_sum) / widths
             max_height = max(max_height, heights.max())
             plt.bar(centres, heights, widths, label=expt)
             plt.xlim((0, 400))
@@ -56,6 +75,18 @@ def plot_stats(expt, output_dir, prefix, all_stats):
 
             plt.figure('log_' + plt_name)
             plt.bar(centres, heights, widths, log=True, label=expt)
+            plt.xlim((0, 400))
+
+            plt.figure('combined')
+            plt.bar(centres, heights, widths, **combined_kwargs[plt_name])
+            plt.xlim((0, 400))
+
+            plt.figure('combined_plot')
+            plt.plot(centres, heights * widths, **combined_plot_kwargs[plt_name])
+            plt.xlim((0, 400))
+
+            plt.figure('combined_cdf')
+            plt.plot(centres, np.cumsum(heights) * widths, **combined_plot_kwargs[plt_name])
             plt.xlim((0, 400))
 
         for plt_name in plt_names:
@@ -74,6 +105,24 @@ def plot_stats(expt, output_dir, prefix, all_stats):
         plt.ylabel('Frequency of lifecycle')
         plt.legend(loc='upper right')
         plt.savefig(os.path.join(output_dir, prefix + 'log_' + plt_name +'.png'))
+
+    plt.figure('combined')
+    plt.xlabel('Lifetime (min)')
+    plt.ylabel('Frequency of lifecycle')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, prefix + 'combined.png'))
+
+    plt.figure('combined_plot')
+    plt.xlabel('Lifetime (min)')
+    plt.ylabel('Frequency of lifecycle')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, prefix + 'combined_plot.png'))
+
+    plt.figure('combined_cdf')
+    plt.xlabel('Lifetime (min)')
+    plt.ylabel('Frequency of lifecycle')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join(output_dir, prefix + 'combined_cdf.png'))
 
 
 def generate_stats(expt, tracker):
