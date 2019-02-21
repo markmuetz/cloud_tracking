@@ -36,6 +36,7 @@ def plot_stats(expt, output_dir, prefix, all_stats):
     for stats in all_stats:
         # Note - normalization done w.r.t. all_lifetimes so that all figs have equiv axes.
         all_lifetimes_sum = stats['all_lifetimes'].sum()
+        max_height = 0
         for plt_name in plt_names:
             lifetimes = stats[plt_name]
             if not len(lifetimes):
@@ -43,10 +44,11 @@ def plot_stats(expt, output_dir, prefix, all_stats):
                 continue
 
             plt.figure(plt_name)
-            hist, bins = np.histogram(lifetimes, bins=80)
+            hist, bins = np.histogram(lifetimes, bins=80, range=(0, 400))
             widths = bins[1:] - bins[:-1]
             centres = (bins[1:] + bins[:-1]) / 2
             heights = (hist / all_lifetimes_sum) / widths
+            max_height = max(max_height, heights.max())
             plt.bar(centres, heights, widths, label=expt)
             plt.xlim((0, 400))
 
@@ -54,7 +56,11 @@ def plot_stats(expt, output_dir, prefix, all_stats):
 
             plt.figure('log_' + plt_name)
             plt.bar(centres, heights, widths, log=True, label=expt)
-            plt.ylim((0, 400))
+            plt.xlim((0, 400))
+
+        for plt_name in plt_names:
+            plt.figure(plt_name)
+            plt.ylim((0, max_height))
 
     for plt_name in plt_names:
         plt.figure(plt_name)
