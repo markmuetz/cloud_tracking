@@ -315,7 +315,7 @@ class Tracker(object):
                 self.groups.append(group)
                 for found_cld in group.clds:
                     if found_cld.id in found_clds:
-                        logger.error('Found multiple cloud ids: {}'.format(flound_cld.id))
+                        logger.error('Found multiple cloud ids: {}'.format(found_cld.id))
                     found_clds[found_cld.id] = found_cld
         return self.groups
 
@@ -364,4 +364,4 @@ class Tracker(object):
                         next_search_clds.append(prev_cld)
                         found_clds[prev_cld.id] = prev_cld
             search_clds = next_search_clds
-        return CloudGroup(found_clds.values())
+        return CloudGroup(list(found_clds.values()))
