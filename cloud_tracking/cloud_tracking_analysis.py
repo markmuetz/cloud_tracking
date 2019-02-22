@@ -11,6 +11,7 @@ logger = getLogger('ct.tr_analysis')
 def output_stats_to_file(expt, output_dir, filename, tracker, stats):
     with open(os.path.join(output_dir, filename), 'w') as f:
         f.write(expt + '\n')
+
         f.write('Total Clouds: {}\n'.format(len(tracker.all_clds)))
         f.write('Total Groups: {}\n'.format(len(tracker.groups)))
 
@@ -22,7 +23,8 @@ def output_stats_to_file(expt, output_dir, filename, tracker, stats):
                 mean_lifetime = 1. * stat['total_lifetimes'] / stat['num_cycles']
             else:
                 mean_lifetime = None
-            f.write('{}, {}, {}, {}\n'.format(key, stat['count'], stat['num_clouds'], mean_lifetime))
+            f.write('{}, {}, {}, {}\n'.format(key, stat['count'], stat['num_clouds'],
+                                              mean_lifetime))
 
 
 def plot_stats(expt, output_dir, prefix, all_stats):
@@ -41,20 +43,21 @@ def plot_stats(expt, output_dir, prefix, all_stats):
     plt.clf()
 
     combined_kwargs = {
-        'all_lifetimes': {'label': 'all ' + expt, 'color': 'grey'},
+        'all_lifetimes': {'label': 'all', 'color': 'grey'},
         'linear_lifetimes': {'label': 'linear', 'edgecolor': 'g', 'fill': False},
         'nonlinear_lifetimes': {'label': 'nonlinear', 'edgecolor': 'r', 'fill': False},
     }
 
     combined_plot_kwargs = {
-        'all_lifetimes': {'label': 'all ' + expt, 'color': 'grey'},
+        'all_lifetimes': {'label': 'all ', 'color': 'grey'},
         'linear_lifetimes': {'label': 'linear', 'color': 'g'},
         'nonlinear_lifetimes': {'label': 'nonlinear', 'color': 'r'},
     }
 
     for stats in all_stats:
         # Note - normalization done w.r.t. all_lifetimes so that all figs have equiv axes.
-        all_lifetimes_hist_sum = np.histogram(stats['all_lifetimes'], bins=80, range=(0, 400))[0].sum()
+        all_lifetimes_hist_sum = np.histogram(stats['all_lifetimes'],
+                                              bins=80, range=(0, 400))[0].sum()
         max_height = 0
         for plt_name in plt_names:
             lifetimes = stats[plt_name]
@@ -91,7 +94,13 @@ def plot_stats(expt, output_dir, prefix, all_stats):
 
         for plt_name in plt_names:
             plt.figure(plt_name)
-            plt.ylim((0, max_height))
+            plt.ylim((0, 0.05))
+
+        plt.figure('combined')
+        plt.ylim((0, 0.05))
+
+        plt.figure('combined_plot')
+        plt.ylim((0, 0.05))
 
     for plt_name in plt_names:
         plt.figure(plt_name)
@@ -107,18 +116,21 @@ def plot_stats(expt, output_dir, prefix, all_stats):
         plt.savefig(os.path.join(output_dir, prefix + 'log_' + plt_name +'.png'))
 
     plt.figure('combined')
+    plt.title('{} PDF hist'.format(expt))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(output_dir, prefix + 'combined.png'))
 
     plt.figure('combined_plot')
+    plt.title('{} PDF'.format(expt))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(output_dir, prefix + 'combined_plot.png'))
 
     plt.figure('combined_cdf')
+    plt.title('{} CDF'.format(expt))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
