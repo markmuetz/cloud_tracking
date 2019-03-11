@@ -193,7 +193,7 @@ class CloudGroup(object):
                     # Not right! Lifetimes not dependent on fractions - other properties will be though.
                     # cld.lifetime = 1 + sum([pc.lifetime * cld.frac(pc) for pc in cld.prev_clds])
                     cld.lifetime = 1 + max([pc.lifetime for pc in cld.prev_clds])
-                else
+                else:
                     cld.lifetime = 1
 
             # Flatten list, only adding those clouds for which all its prev clouds have valid lifetimes.
