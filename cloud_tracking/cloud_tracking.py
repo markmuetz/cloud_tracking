@@ -109,6 +109,7 @@ class CloudGroup(object):
 
     def _find_splits_mergers_complex(self):
         """Calculate how many splits, mergers and complex relationships there are."""
+        logger.debug('finding splits mergers complex rels')
         for cld in self.clds:
             if len(cld.next_clds) >= 2:
                 self.has_splits = True
@@ -142,6 +143,7 @@ class CloudGroup(object):
 
     def _arrange_by_time(self):
         """Make an easily accessible dict."""
+        logger.debug('arrange by time')
         clds_at_time = defaultdict(list)
         first_time_index = int(1e99)
         last_time_index = -1
@@ -159,6 +161,7 @@ class CloudGroup(object):
         See eqns 4-6."""
         # 2 passes. On first pass, calc. reduced fractions, equiv. to bracketed term in eqn 4.
         # On second pass, normalize each cloud which is best done by looking at next clouds.
+        logger.debug('calc cld fractions')
         for cld in self.clds:
             if not cld.prev_clds:
                 continue
@@ -182,6 +185,7 @@ class CloudGroup(object):
                     next_cld.normalize_frac(cld, N)
 
     def _calc_cld_lifetimes(self):
+        logger.debug('calc cld lifetimes')
         next_clds = self.start_clouds
         while next_clds:
             for cld in next_clds:
