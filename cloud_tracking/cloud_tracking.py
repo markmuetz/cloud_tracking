@@ -350,9 +350,12 @@ class Tracker(object):
     @staticmethod
     def _find_connected_clouds(cld):
         """Builds the cloud group by iterating through the linkages between clouds."""
+        logger.debug('find connected clouds for {}', cld.id)
         found_clds = {cld.id: cld}
         search_clds = [cld]
         while search_clds:
+            logger.debug('search_clds: {}', [cld.id for cld in search_clds])
+            logger.debug('len(found_clds): {}', len(found_clds))
             next_search_clds = []
             for search_cld in search_clds:
                 for next_cld in search_cld.next_clds:
