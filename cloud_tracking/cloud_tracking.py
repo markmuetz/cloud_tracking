@@ -114,26 +114,25 @@ class CloudGroup(object):
             if len(cld.next_clds) >= 2:
                 self.has_splits = True
                 self.num_splits += 1
-                if len(cld.next_clds) >= 2:
-                    # Check for complex rels, can only be true if cld.next_clds >= 2.
-                    # Look for all current clouds, that is clouds at the same time_index as cld.
-                    # For each of those, check to see whether any two of its clouds are the same as any to of cld's.
-                    # If they are - it's a complex rel.
-                    curr_clds = []
-                    for next_cld in cld.next_clds:
-                        curr_clds.extend(next_cld.prev_clds)
+                # Check for complex rels, can only be true if cld.next_clds >= 2.
+                # Look for all current clouds, that is clouds at the same time_index as cld.
+                # For each of those, check to see whether any two of its clouds are the same as any to of cld's.
+                # If they are - it's a complex rel.
+                curr_clds = []
+                for next_cld in cld.next_clds:
+                    curr_clds.extend(next_cld.prev_clds)
 
-                    orig_next_clds = set(cld.next_clds)
-                    for curr_cld in curr_clds:
-                        if curr_cld == cld:
-                            continue
-                        other_next_clds = set(curr_cld.next_clds)
-                        if len(orig_next_clds & other_next_clds) >= 2:
-                            if not cld.is_complex_rel:
-                                # Don't double count complex rels.
-                                cld.is_complex_rel = True
-                                self.has_complex_rel = True
-                                self.num_complex_rel += 1
+                orig_next_clds = set(cld.next_clds)
+                for curr_cld in curr_clds:
+                    if curr_cld == cld:
+                        continue
+                    other_next_clds = set(curr_cld.next_clds)
+                    if len(orig_next_clds & other_next_clds) >= 2:
+                        if not cld.is_complex_rel:
+                            # Don't double count complex rels.
+                            cld.is_complex_rel = True
+                            self.has_complex_rel = True
+                            self.num_complex_rel += 1
 
             if len(cld.prev_clds) >= 2:
                 self.has_merges = True
@@ -188,6 +187,7 @@ class CloudGroup(object):
         logger.debug('calc cld lifetimes')
         next_clds = self.start_clouds
         while next_clds:
+            logger.debug('next_clds: {}', [cld.id for cld in next_clds])
             for cld in next_clds:
                 if cld.prev_clds:
                     # Not right! Lifetimes not dependent on fractions - other properties will be though.
