@@ -13,7 +13,7 @@ from collections import defaultdict
 import numpy as np
 
 from cloud_tracking.correlated_distance import correlate
-from cloud_tracking.utils import dist
+from cloud_tracking.utils import dist, grow
 
 logger = getLogger('ct.tracking')
 
@@ -218,14 +218,19 @@ class Tracker(object):
     Builds up a graph of clouds, and optionally converts these into groups of connected
     clouds.
     """
-    def __init__(self, cld_field_iter, store_working=False, store_detailed_working=False):
+    def __init__(self, cld_field_iter, include_touching=False, touching_diagonal=False,
+                 store_working=False, store_detailed_working=False):
         """
         :param cld_field_iter: iterable cloud field - like iris.cube.Cube.
+        :param bool include_touching: whether to track touching, not just overlapping, clouds.
+        :param bool touching_diagonal: touching definition to include corners.
         :param bool store_working: extra debug.
         :param bool store_detailed_working: extra extra debug.
         """
         # assert iter(cld_field_iter).next().ndim == 2
         self.cld_field_iter = iter(cld_field_iter)
+        self.include_touching = include_touching
+        self.touching_diagonal = touching_diagonal
         # self.proj_cld_field = np.zeros_like(self.cld_field)
         # List of dicts, each dict's key is the label of the cloud in cld_field.
         # Each dict's value is a cloud.
@@ -287,7 +292,11 @@ class Tracker(object):
                 # N.B. prev_labels work for proj_cld_field as it's just a translation of prev_cld_field.
                 prev_cld = prev_clds[prev_label]
                 # These are labels for the current field.
-                overlapping_labels = set(curr_cld_field[proj_cld_field_ss == prev_label])
+                if self.include_touching:
+                    overlapping_labels = set(curr_cld_field[grow(proj_cld_field_ss == prev_label,
+                                                                 self.touching_diagonal)])
+                else:
+                    overlapping_labels = set(curr_cld_field[proj_cld_field_ss == prev_label])
                 if 0 in overlapping_labels:
                     overlapping_labels.remove(0)
 

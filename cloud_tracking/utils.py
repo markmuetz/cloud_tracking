@@ -76,3 +76,17 @@ def label_clds(mask, diagonal=False, wrap=True, min_cells=0):
     else:
         return max_label, labels
 
+
+def grow(a, diagonal=False):
+    """
+    Grow original array by one cell.
+
+    :param a: input array.
+    :param diagonal: whether to grow in diagonal direction.
+    :return: new array that has been extended in each dir by one unit.
+    """
+    anew = a.copy()
+    for i, j in _test_indices(0, 0, diagonal):
+        anew |= np.roll(np.roll(a, i, axis=0), j, axis=1)
+    return anew
+
