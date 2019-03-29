@@ -45,6 +45,7 @@ class Cloud(object):
         self.is_complex_rel = False
         self._reduced_frac = {}
         self._frac = {}
+        self.mass_flux = None
 
     def add_next(self, cld):
         assert cld is not self
@@ -218,19 +219,26 @@ class Tracker(object):
     Builds up a graph of clouds, and optionally converts these into groups of connected
     clouds.
     """
-    def __init__(self, cld_field_iter, include_touching=False, touching_diagonal=False,
-                 store_working=False, store_detailed_working=False):
+    def __init__(self, cld_field_iter, dx, dy, include_touching=False, touching_diagonal=False,
+                 ignore_smaller_equal_than=None, store_working=False, store_detailed_working=False):
         """
         :param cld_field_iter: iterable cloud field - like iris.cube.Cube.
+        :param float dx: resolution in x-dir.
+        :param float dy: resolution in y-dir.
         :param bool include_touching: whether to track touching, not just overlapping, clouds.
         :param bool touching_diagonal: touching definition to include corners.
+        :param int ignore_smaller_equal_than: if set, ignore clouds smaller than (grid-cells).
         :param bool store_working: extra debug.
         :param bool store_detailed_working: extra extra debug.
         """
         # assert iter(cld_field_iter).next().ndim == 2
         self.cld_field_iter = iter(cld_field_iter)
+        self.dx = dx
+        self.dy = dy
+        assert self.dx == self.dy, 'Can only handle dx == dy currently'
         self.include_touching = include_touching
         self.touching_diagonal = touching_diagonal
+        self.ignore_smaller_than = ignore_smaller_equal_than
         # self.proj_cld_field = np.zeros_like(self.cld_field)
         # List of dicts, each dict's key is the label of the cloud in cld_field.
         # Each dict's value is a cloud.
@@ -245,6 +253,21 @@ class Tracker(object):
         # Helpful for debuging.
         self.store_working = store_working
         self.store_detailed_working = store_detailed_working
+        self.can_calc_mass_flux = False
+        self.w_iter = None
+        self.rho_iter = None
+        self.ignored = 0
+
+    def add_mass_flux_info(self, w_iter, rho_iter):
+        """Used to set field iterators for mass flux calcs.
+
+        :param w_iter: iterable w field.
+        :param rho_iter: iterable rho field
+        :return: None
+        """
+        self.can_calc_mass_flux = True
+        self.w_iter = w_iter
+        self.rho_iter = rho_iter
 
     def track(self):
         """Track clouds from one timestep to the next, building a cloud graph."""
@@ -253,6 +276,11 @@ class Tracker(object):
 
         for time_index, curr_cld_field_cube in enumerate(self.cld_field_iter):
             assert curr_cld_field_cube.ndim == 2
+            if self.can_calc_mass_flux:
+                w_cube = next(self.w_iter)
+                rho_cube = next(self.rho_iter)
+                mass_flux = w_cube.data * rho_cube.data * self.dx * self.dy
+
             logger.debug('Time index: {}'.format(time_index))
             curr_cld_field = curr_cld_field_cube.data
             max_label = curr_cld_field.max()
@@ -260,9 +288,10 @@ class Tracker(object):
             curr_clds = {}
             # Make cloud objects.
             for label in range(1, max_label + 1):
-                # TODO: hardcoded dx.
-                pos = np.array(list(map(np.mean, np.where(curr_cld_field == label)))) * 1000 # x, y pos in m.
+                pos = np.array(list(map(np.mean, np.where(curr_cld_field == label)))) * self.dx # x, y pos in m.
                 curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
+                if self.can_calc_mass_flux:
+                    curr_clds[label].mass_flux = mass_flux[curr_cld_field == label].sum()
 
             logger.debug('Found {} clouds'.format(max_label))
             self.clds_at_time.append(curr_clds)
@@ -291,6 +320,10 @@ class Tracker(object):
             for prev_label in prev_labels:
                 # N.B. prev_labels work for proj_cld_field as it's just a translation of prev_cld_field.
                 prev_cld = prev_clds[prev_label]
+                if self.ignore_smaller_than:
+                    if prev_cld.size <= self.ignore_smaller_than:
+                        self.ignored += 1
+                        continue
                 # These are labels for the current field.
                 if self.include_touching:
                     overlapping_labels = set(curr_cld_field[grow(proj_cld_field_ss == prev_label,
@@ -323,6 +356,8 @@ class Tracker(object):
 
         found_clds = {}
         for cld in self.all_clds:
+            if cld.size <= self.ignore_smaller_than:
+                continue
             if cld.id not in found_clds:
                 group = self._find_connected_clouds(cld)
                 self.groups.append(group)
