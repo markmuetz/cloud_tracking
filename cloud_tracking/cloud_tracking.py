@@ -59,9 +59,13 @@ class Cloud(object):
         self._reduced_frac[cld] = reduced_frac
 
     def set_frac(self, cld, frac):
+        if np.isinf(frac):
+            logger.warning('cld {} contains inf from frac'.format(self))
         self._frac[cld] = frac
 
     def normalize_frac(self, cld, N):
+        if np.isinf(N):
+            logger.warning('cld {} contains inf from N'.format(self))
         self._frac[cld] = N * self.reduced_frac(cld)
 
     def reduced_frac(self, cld):
@@ -107,6 +111,25 @@ class CloudGroup(object):
         self._arrange_by_time()
         self._calc_cld_fractions()
         self._calc_cld_lifetimes()
+
+    def get_cld_lifetime_properties(self, property):
+        all_timeseries = []
+        for end_cloud in self.end_clouds:
+            reverse_timeseries = [getattr(end_cloud, property)]
+            curr_clds = [(end_cloud, 1)]
+            while curr_clds:
+                pval = 0
+                prev_clds = []
+                for curr_cld, frac in curr_clds:
+                    for prev_cld in curr_cld.prev_clds:
+                        frac *= curr_cld.frac(prev_cld)
+                        pval += getattr(prev_cld, property) * frac
+                        prev_clds.append((prev_cld, frac))
+                if prev_clds:
+                    reverse_timeseries.append(pval)
+                curr_clds = prev_clds
+            all_timeseries.append(reverse_timeseries[::-1])
+        return all_timeseries
 
     def _find_splits_mergers_complex(self):
         """Calculate how many splits, mergers and complex relationships there are."""
@@ -341,6 +364,10 @@ class Tracker(object):
                         working += (curr_cld_field >= 1).astype(int)
                         self.all_working['detailed_working'].append(working)
                     next_cld = curr_clds[next_cld_label]
+                    if self.ignore_smaller_than:
+                        if next_cld.size <= self.ignore_smaller_than:
+                            self.ignored += 1
+                            continue
                     prev_cld.add_next(next_cld)
 
             prev_cld_field = curr_cld_field

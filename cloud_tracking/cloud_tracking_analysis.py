@@ -44,14 +44,14 @@ def plot_stats(expt, output_dir, prefix, all_stats):
 
     combined_kwargs = {
         'all_lifetimes': {'label': 'all', 'color': 'grey'},
-        'linear_lifetimes': {'label': 'linear', 'edgecolor': 'g', 'fill': False},
-        'nonlinear_lifetimes': {'label': 'nonlinear', 'edgecolor': 'r', 'fill': False},
+        'linear_lifetimes': {'label': 'simple', 'edgecolor': 'g', 'fill': False},
+        'nonlinear_lifetimes': {'label': 'complex', 'edgecolor': 'r', 'fill': False},
     }
 
     combined_plot_kwargs = {
         'all_lifetimes': {'label': 'all ', 'color': 'grey'},
-        'linear_lifetimes': {'label': 'linear', 'color': 'g'},
-        'nonlinear_lifetimes': {'label': 'nonlinear', 'color': 'r'},
+        'linear_lifetimes': {'label': 'simple', 'color': 'g'},
+        'nonlinear_lifetimes': {'label': 'complex', 'color': 'r'},
     }
 
     for stats in all_stats:
