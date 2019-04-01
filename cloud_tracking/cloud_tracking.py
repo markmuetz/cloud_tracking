@@ -17,6 +17,8 @@ from cloud_tracking.utils import dist, grow
 
 logger = getLogger('ct.tracking')
 
+FRAC_METHODS = ['pc2009', 'simple']
+
 
 class Cloud(object):
     """Simple representation of a cloud."""
@@ -91,11 +93,13 @@ class CloudGroup(object):
     def __len__(self):
         return len(self.clds)
 
-    def __init__(self, clds):
+    def __init__(self, clds, frac_method='pc2009'):
         """
         :param list clds: list of clouds (must all be related).
         """
         self.clds = clds
+        assert frac_method in FRAC_METHODS, 'Unrecognized frac_method'
+        self.frac_method = frac_method
         self.has_splits = False
         self.has_merges = False
         self.has_complex_rel = False
@@ -179,12 +183,18 @@ class CloudGroup(object):
             self.clds_at_time.append(clds_at_time[time_index])
 
     def _calc_cld_fractions(self):
+        logger.debug('calc cld fractions')
+        if self.frac_method == 'pc2009':
+            self._calc_cld_fractions_pc2009()
+        elif self.frac_method == 'simple':
+            self._calc_cld_fractions_simple()
+
+    def _calc_cld_fractions_pc2009(self):
         """Calculate cloud fractions based on Plant (2009)
 
         See eqns 4-6."""
         # 2 passes. On first pass, calc. reduced fractions, equiv. to bracketed term in eqn 4.
         # On second pass, normalize each cloud which is best done by looking at next clouds.
-        logger.debug('calc cld fractions')
         for cld in self.clds:
             if not cld.prev_clds:
                 continue
@@ -206,6 +216,13 @@ class CloudGroup(object):
                 N = 1. / sum(reduced_fracs)
                 for next_cld in cld.next_clds:
                     next_cld.normalize_frac(cld, N)
+
+    def _calc_cld_fractions_simple(self):
+        """Use a simple area weighted measure to calc fractions."""
+        for cld in self.clds:
+            total_next_area = sum([nc.size for nc in cld.next_clds])
+            for next_cld in cld.next_clds:
+                next_cld.set_frac(cld, next_cld.size / total_next_area)
 
     def _calc_cld_lifetimes(self):
         logger.debug('calc cld lifetimes')
@@ -243,7 +260,8 @@ class Tracker(object):
     clouds.
     """
     def __init__(self, cld_field_iter, dx, dy, include_touching=False, touching_diagonal=False,
-                 ignore_smaller_equal_than=None, store_working=False, store_detailed_working=False):
+                 ignore_smaller_equal_than=None, store_working=False, store_detailed_working=False,
+                 frac_method='pc2009'):
         """
         :param cld_field_iter: iterable cloud field - like iris.cube.Cube.
         :param float dx: resolution in x-dir.
@@ -253,6 +271,7 @@ class Tracker(object):
         :param int ignore_smaller_equal_than: if set, ignore clouds smaller than (grid-cells).
         :param bool store_working: extra debug.
         :param bool store_detailed_working: extra extra debug.
+        :param str frac_method: 'pc2009', 'simple' - fraction method to use.
         """
         # assert iter(cld_field_iter).next().ndim == 2
         self.cld_field_iter = iter(cld_field_iter)
@@ -262,6 +281,8 @@ class Tracker(object):
         self.include_touching = include_touching
         self.touching_diagonal = touching_diagonal
         self.ignore_smaller_than = ignore_smaller_equal_than
+        assert frac_method in FRAC_METHODS, 'Unrecognized frac_method'
+        self.frac_method = frac_method
         # self.proj_cld_field = np.zeros_like(self.cld_field)
         # List of dicts, each dict's key is the label of the cloud in cld_field.
         # Each dict's value is a cloud.
@@ -386,7 +407,7 @@ class Tracker(object):
             if cld.size <= self.ignore_smaller_than:
                 continue
             if cld.id not in found_clds:
-                group = self._find_connected_clouds(cld)
+                group = self._find_connected_clouds(cld, self.frac_method)
                 self.groups.append(group)
                 for found_cld in group.clds:
                     if found_cld.id in found_clds:
@@ -423,7 +444,7 @@ class Tracker(object):
         return self.clusters_at_time
 
     @staticmethod
-    def _find_connected_clouds(cld):
+    def _find_connected_clouds(cld, frac_method):
         """Builds the cloud group by iterating through the linkages between clouds."""
         logger.debug('find connected clouds for {}', cld.id)
         found_clds = {cld.id: cld}
@@ -442,4 +463,4 @@ class Tracker(object):
                         next_search_clds.append(prev_cld)
                         found_clds[prev_cld.id] = prev_cld
             search_clds = next_search_clds
-        return CloudGroup(list(found_clds.values()))
+        return CloudGroup(list(found_clds.values()), frac_method)
