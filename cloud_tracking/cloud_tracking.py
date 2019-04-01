@@ -117,6 +117,11 @@ class CloudGroup(object):
         self._calc_cld_lifetimes()
 
     def get_cld_lifetime_properties(self, property):
+        """Get property at prev timesteps based on all clds that have contributed to each end cld.
+
+        Iterate over all cloud from given end cloud, carrying the fraction that it has contributed
+        back over time.
+        """
         all_timeseries = []
         for end_cloud in self.end_clouds:
             reverse_timeseries = [getattr(end_cloud, property)]
@@ -124,9 +129,9 @@ class CloudGroup(object):
             while curr_clds:
                 pval = 0
                 prev_clds = []
-                for curr_cld, frac in curr_clds:
+                for curr_cld, curr_frac in curr_clds:
                     for prev_cld in curr_cld.prev_clds:
-                        frac *= curr_cld.frac(prev_cld)
+                        frac = curr_frac *  curr_cld.frac(prev_cld)
                         pval += getattr(prev_cld, property) * frac
                         prev_clds.append((prev_cld, frac))
                 if prev_clds:
