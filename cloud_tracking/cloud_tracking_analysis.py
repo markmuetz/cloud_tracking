@@ -37,7 +37,7 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
         plt.figure('log_' + plt_name)
         plt.clf()
 
-    plt.figure('combined_hist_pdf')
+    plt.figure('combined_hist_pdf', figsize=cm_to_inch(12, 9))
     plt.clf()
     plt.figure('combined_plot_pdf')
     plt.clf()
@@ -117,7 +117,7 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
         plt.legend(loc='upper right')
         plt.savefig(os.path.join(output_dir, prefix + 'log_' + plt_name +'.png'))
 
-    plt.figure('combined_hist_pdf', figsize=cm_to_inch(8, 6))
+    plt.figure('combined_hist_pdf')
     plt.title('{}'.format(expt_name))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
