@@ -122,6 +122,7 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
+    plt.tight_layout()
     plt.savefig(os.path.join(output_dir, prefix + 'combined_hist_pdf.png'))
 
     plt.figure('combined_plot_pdf')
