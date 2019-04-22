@@ -116,7 +116,7 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
         plt.savefig(os.path.join(output_dir, prefix + 'log_' + plt_name +'.png'))
 
     plt.figure('combined')
-    plt.title('{} PDF hist'.format(expt_name))
+    plt.title('{}'.format(expt_name))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
