@@ -37,9 +37,9 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
         plt.figure('log_' + plt_name)
         plt.clf()
 
-    plt.figure('combined')
+    plt.figure('combined_hist_pdf')
     plt.clf()
-    plt.figure('combined_plot')
+    plt.figure('combined_plot_pdf')
     plt.clf()
     plt.figure('combined_cdf')
     plt.clf()
@@ -82,11 +82,11 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
             plt.bar(centres, heights, widths, log=True, label=expt_name)
             plt.xlim((0, 400))
 
-            plt.figure('combined')
+            plt.figure('combined_hist_pdf')
             plt.bar(centres, heights, widths, **combined_kwargs[plt_name])
             plt.xlim((0, 400))
 
-            plt.figure('combined_plot')
+            plt.figure('combined_plot_pdf')
             plt.plot(centres, heights * widths, **combined_plot_kwargs[plt_name])
             plt.xlim((0, 400))
 
@@ -98,10 +98,10 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
             plt.figure(plt_name)
             plt.ylim((0, 0.05))
 
-        plt.figure('combined')
+        plt.figure('combined_hist_pdf')
         plt.ylim((0, 0.05))
 
-        plt.figure('combined_plot')
+        plt.figure('combined_plot_pdf')
         plt.ylim((0, 0.05))
 
     for plt_name in plt_names:
@@ -122,14 +122,14 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join(output_dir, prefix + 'combined.png'))
+    plt.savefig(os.path.join(output_dir, prefix + 'combined_hist_pdf.png'))
 
     plt.figure('combined_plot_pdf')
     plt.title('{} PDF'.format(expt_name))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
-    plt.savefig(os.path.join(output_dir, prefix + 'combined_plot.png'))
+    plt.savefig(os.path.join(output_dir, prefix + 'combined_plot_pdf.png'))
 
     plt.figure('combined_cdf')
     plt.title('{} CDF'.format(expt_name))
