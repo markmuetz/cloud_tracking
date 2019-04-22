@@ -8,9 +8,9 @@ import pylab as plt
 logger = getLogger('ct.tr_analysis')
 
 
-def output_stats_to_file(expt, output_dir, filename, tracker, stats):
+def output_stats_to_file(expt_name, output_dir, filename, tracker, stats):
     with open(os.path.join(output_dir, filename), 'w') as f:
-        f.write(expt + '\n')
+        f.write(expt_name + '\n')
 
         f.write('Total Clouds: {}\n'.format(len(tracker.all_clds)))
         f.write('Total Groups: {}\n'.format(len(tracker.groups)))
@@ -27,7 +27,7 @@ def output_stats_to_file(expt, output_dir, filename, tracker, stats):
                                               mean_lifetime))
 
 
-def plot_stats(expt, output_dir, prefix, all_stats):
+def plot_stats(expt_name, output_dir, prefix, all_stats):
     plt_names = ['all_lifetimes', 'linear_lifetimes', 'nonlinear_lifetimes']
     for plt_name in plt_names:
         plt.figure(plt_name)
@@ -71,13 +71,13 @@ def plot_stats(expt, output_dir, prefix, all_stats):
             centres = (bins[1:] + bins[:-1]) / 2
             heights = (hist / all_lifetimes_hist_sum) / widths
             max_height = max(max_height, heights.max())
-            plt.bar(centres, heights, widths, label=expt)
+            plt.bar(centres, heights, widths, label=expt_name)
             plt.xlim((0, 400))
 
-            # plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt)
+            # plt.hist(lifetimes, bins=80, range=(0, 400), normed=True, histtype='step', label=expt_name)
 
             plt.figure('log_' + plt_name)
-            plt.bar(centres, heights, widths, log=True, label=expt)
+            plt.bar(centres, heights, widths, log=True, label=expt_name)
             plt.xlim((0, 400))
 
             plt.figure('combined')
@@ -116,28 +116,28 @@ def plot_stats(expt, output_dir, prefix, all_stats):
         plt.savefig(os.path.join(output_dir, prefix + 'log_' + plt_name +'.png'))
 
     plt.figure('combined')
-    plt.title('{} PDF hist'.format(expt))
+    plt.title('{} PDF hist'.format(expt_name))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(output_dir, prefix + 'combined.png'))
 
     plt.figure('combined_plot')
-    plt.title('{} PDF'.format(expt))
+    plt.title('{} PDF'.format(expt_name))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(output_dir, prefix + 'combined_plot.png'))
 
     plt.figure('combined_cdf')
-    plt.title('{} CDF'.format(expt))
+    plt.title('{} CDF'.format(expt_name))
     plt.xlabel('Lifetime (min)')
     plt.ylabel('Frequency of lifecycle')
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(output_dir, prefix + 'combined_cdf.png'))
 
 
-def generate_stats(expt, tracker):
+def generate_stats(expt_name, tracker):
     stats = OrderedDict()
     for group_type in ['linear', 'merges_only', 'splits_only', 'merges_and_splits', 'complex']:
         stats[group_type] = {'count': 0, 'num_clouds': 0, 'num_cycles': 0, 'total_lifetimes': 0}
