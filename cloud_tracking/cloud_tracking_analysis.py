@@ -102,7 +102,7 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
         plt.ylim((0, 0.05))
 
         plt.figure('combined_plot_pdf')
-        plt.ylim((0, 0.05))
+        plt.ylim((0, 0.1))
 
     for plt_name in plt_names:
         plt.figure(plt_name)
