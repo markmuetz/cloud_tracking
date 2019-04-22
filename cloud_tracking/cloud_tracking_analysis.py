@@ -143,7 +143,8 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
 
 def generate_stats(expt_name, tracker):
     stats = OrderedDict()
-    for group_type in ['linear', 'merges_only', 'splits_only', 'merges_and_splits', 'complex']:
+    for group_type in ['linear', 'merges_only', 'splits_only',
+                       'merges_and_splits', 'merges_or_splits', 'complex']:
         stats[group_type] = {'count': 0, 'num_clouds': 0, 'num_cycles': 0, 'total_lifetimes': 0}
 
     all_lifetimes = []
@@ -165,6 +166,8 @@ def generate_stats(expt_name, tracker):
         elif group.has_merges and group.has_splits:
             stat = stats['merges_and_splits']
             nonlinear_lifetimes.extend(curr_lifetimes)
+        elif group.has_merges or group.has_splits:
+            stat = stats['merges_or_splits']
         elif group.has_complex_rel:
             stat = stats['complex']
 
