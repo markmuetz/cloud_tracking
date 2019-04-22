@@ -141,6 +141,13 @@ def plot_stats(expt_name, output_dir, prefix, all_stats):
     plt.savefig(os.path.join(output_dir, prefix + 'combined_cdf.png'))
 
 
+def update_stat(stat, group, curr_lifetimes):
+    stat['count'] += 1
+    stat['num_clouds'] += len(group.clds)
+    stat['num_cycles'] += len(group.end_clouds)
+    stat['total_lifetimes'] += sum(curr_lifetimes) * 5
+
+
 def generate_stats(expt_name, tracker):
     stats = OrderedDict()
     for group_type in ['linear', 'merges_only', 'splits_only',
@@ -154,27 +161,30 @@ def generate_stats(expt_name, tracker):
     for group in tracker.groups:
         curr_lifetimes = [c.lifetime for c in group.end_clouds]
         all_lifetimes.extend(curr_lifetimes)
+
         if group.is_linear:
             stat = stats['linear']
+            update_stat(stat, group, curr_lifetimes)
             linear_lifetimes.extend(curr_lifetimes)
-        elif group.has_merges and not group.has_splits:
-            stat = stats['merges_only']
-            nonlinear_lifetimes.extend(curr_lifetimes)
-        elif not group.has_merges and group.has_splits:
-            stat = stats['splits_only']
-            nonlinear_lifetimes.extend(curr_lifetimes)
-        elif group.has_merges and group.has_splits:
-            stat = stats['merges_and_splits']
-            nonlinear_lifetimes.extend(curr_lifetimes)
-        elif group.has_merges or group.has_splits:
-            stat = stats['merges_or_splits']
-        elif group.has_complex_rel:
-            stat = stats['complex']
 
-        stat['count'] += 1
-        stat['num_clouds'] += len(group.clds)
-        stat['num_cycles'] += len(group.end_clouds)
-        stat['total_lifetimes'] += sum(curr_lifetimes) * 5
+        if group.has_merges and not group.has_splits:
+            stat = stats['merges_only']
+            update_stat(stat, group, curr_lifetimes)
+        if not group.has_merges and group.has_splits:
+            stat = stats['splits_only']
+            update_stat(stat, group, curr_lifetimes)
+        if group.has_merges and group.has_splits:
+            stat = stats['merges_and_splits']
+            update_stat(stat, group, curr_lifetimes)
+
+        if group.has_merges or group.has_splits:
+            stat = stats['merges_or_splits']
+            update_stat(stat, group, curr_lifetimes)
+            nonlinear_lifetimes.extend(curr_lifetimes)
+
+        if group.has_complex_rel:
+            stat = stats['complex']
+            update_stat(stat, group, curr_lifetimes)
 
     stats['all_lifetimes'] = np.array(all_lifetimes) * 5
     stats['linear_lifetimes'] = np.array(linear_lifetimes) * 5
