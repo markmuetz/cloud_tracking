@@ -188,7 +188,6 @@ class CloudGroup(object):
             self.clds_at_time.append(clds_at_time[time_index])
 
     def _calc_cld_fractions(self):
-        logger.debug('calc cld fractions')
         if self.frac_method == 'pc2009':
             self._calc_cld_fractions_pc2009()
         elif self.frac_method == 'simple':
