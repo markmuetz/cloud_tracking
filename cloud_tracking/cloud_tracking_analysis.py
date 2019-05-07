@@ -151,7 +151,7 @@ def update_stat(stat, group, curr_lifetimes):
 def generate_stats(expt_name, tracker):
     stats = OrderedDict()
     for group_type in ['linear', 'merges_only', 'splits_only',
-                       'merges_and_splits', 'merges_or_splits', 'complex']:
+                       'merges_and_splits', 'merges_or_splits', 'complex', 'all']:
         stats[group_type] = {'count': 0, 'num_clouds': 0, 'num_cycles': 0, 'total_lifetimes': 0}
 
     all_lifetimes = []
@@ -161,6 +161,9 @@ def generate_stats(expt_name, tracker):
     for group in tracker.groups:
         curr_lifetimes = [c.lifetime for c in group.end_clouds]
         all_lifetimes.extend(curr_lifetimes)
+
+        stat = stats['all']
+        update_stat(stat, group, curr_lifetimes)
 
         if group.is_linear:
             stat = stats['linear']
