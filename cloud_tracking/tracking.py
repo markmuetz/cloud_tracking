@@ -1,5 +1,4 @@
 """Cloud tracking of a 2D field
-
 Implements ideas from: Plant (2009): Statistical properties of cloud lifecycles in cloud-resolving models
 Additionally, uses the correlation between two different cloud fields to work out direction of travel of clouds.
 This allows it to be run with far lower temporal resolution - 5 mins as opposed to 0.5s. The correlation is global over
@@ -13,7 +12,7 @@ from collections import defaultdict
 import numpy as np
 
 from cloud_tracking.correlated_distance import correlate
-from cloud_tracking.utils import dist, grow
+from cloud_tracking.utils import dist, grow, grow_3d
 
 logger = getLogger('ct.tracking')
 
@@ -27,12 +26,13 @@ class Cloud(object):
     def __repr__(self):
         return 'Cloud({}, {}, {}) # id={}'.format(self.label, self.time_index, self.size, self.id)
 
-    def __init__(self, label, time_index, pos, size):
+    def __init__(self, label, time_index, pos, size, pos_3d=None):
         """
         :param int label: label from cloud field.
         :param int time_index: time_index from cloud field.
         :param np.ndarray pos: pos as 2 element array.
         :param int size: size in grid-cells.
+        :param np.ndarray pos_3d: pos of all cloudy points (for 3d clouds).
         """
         assert label != 0
         # Auto-incrementing ID.
@@ -41,6 +41,7 @@ class Cloud(object):
         self.time_index = time_index
         self.lifetime = None
         self.pos = pos
+        self.pos_3d = pos_3d
         self.size = size
         self.prev_clds = []
         self.next_clds = []
@@ -79,15 +80,8 @@ class Cloud(object):
         return self._frac[cld]
 
 
-class Cluster(object):
-    """Collection of clouds that are close to eachother at given timestep."""
-    def __init__(self, clds):
-        self.clds = clds
-
-
 class CloudGroup(object):
     """Collection of related clouds that are connected by the prev/next relationship.
-
     Works out some details of the group, such as how many splits/merges there have been."""
 
     def __len__(self):
@@ -265,6 +259,7 @@ class Tracker(object):
     """
     def __init__(self, cld_field_iter, dx, dy, include_touching=False, touching_diagonal=False,
                  ignore_smaller_equal_than=None, store_working=False, store_detailed_working=False,
+                 track_3d=False, track_level=None,
                  frac_method='pc2009'):
         """
         :param cld_field_iter: iterable cloud field - like iris.cube.Cube.
@@ -275,6 +270,8 @@ class Tracker(object):
         :param int ignore_smaller_equal_than: if set, ignore clouds smaller than (grid-cells).
         :param bool store_working: extra debug.
         :param bool store_detailed_working: extra extra debug.
+        :param bool track_3d: enable 3d tracking.
+        :param bool track_level: index at which to perform 3d tracking.
         :param str frac_method: 'pc2009', 'simple' - fraction method to use.
         """
         # assert iter(cld_field_iter).next().ndim == 2
@@ -305,6 +302,10 @@ class Tracker(object):
         self.w_iter = None
         self.rho_iter = None
         self.ignored = 0
+        self.track_3d = track_3d
+        if self.track_3d:
+            assert track_level is not None
+        self.track_lev = track_level
 
     def add_mass_flux_info(self, w_iter, rho_iter):
         """Used to set field iterators for mass flux calcs.
@@ -323,23 +324,34 @@ class Tracker(object):
             self.all_working = {'working': [], 'detailed_working': []}
 
         for time_index, curr_cld_field_cube in enumerate(self.cld_field_iter):
-            assert curr_cld_field_cube.ndim == 2
+            curr_cld_field = curr_cld_field_cube.data
+            if self.track_3d:
+                assert curr_cld_field.ndim == 3
+            else:
+                assert curr_cld_field.ndim == 2
             if self.can_calc_mass_flux:
                 w_cube = next(self.w_iter)
                 rho_cube = next(self.rho_iter)
                 mass_flux = w_cube.data * rho_cube.data * self.dx * self.dy
+                # mass_flux = w_cube * rho_cube * self.dx * self.dy
 
             logger.debug('Time index: {}'.format(time_index))
-            curr_cld_field = curr_cld_field_cube.data
-            max_label = curr_cld_field.max()
+            max_label = int(curr_cld_field.max())
             curr_sizes = np.histogram(curr_cld_field, range(1, max_label + 2))[0]
             curr_clds = {}
             # Make cloud objects.
             for label in range(1, max_label + 1):
-                pos = np.array(list(map(np.mean, np.where(curr_cld_field == label)))) * self.dx # x, y pos in m.
-                curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
-                if self.can_calc_mass_flux:
-                    curr_clds[label].mass_flux = mass_flux[curr_cld_field == label].sum()
+                if self.track_3d:
+                    pos = np.array(list(map(np.mean, np.where(curr_cld_field[self.track_lev,:,:] == label)))) * self.dx # x, y pos in m.
+                    pos_3d = np.array(list(np.where(curr_cld_field == label)))  # x, y, z pos in grid points.
+                    curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1], pos_3d)
+                    if self.can_calc_mass_flux:
+                        curr_clds[label].mass_flux = mass_flux[curr_cld_field[self.track_lev,:,:] == label].sum()
+                else:
+                    pos = np.array(list(map(np.mean, np.where(curr_cld_field == label)))) * self.dx # x, y pos in m.
+                    curr_clds[label] = Cloud(label, time_index, pos, curr_sizes[label - 1])
+                    if self.can_calc_mass_flux:
+                        curr_clds[label].mass_flux = mass_flux[curr_cld_field == label].sum()
 
             logger.debug('Found {} clouds'.format(max_label))
             self.clds_at_time.append(curr_clds)
@@ -352,11 +364,15 @@ class Tracker(object):
                 continue
 
             # Work out the highest correlation between the prev and curr cld field.
-            dx, dy, amp = correlate(prev_cld_field > 0, curr_cld_field > 0)
+            if self.track_3d:
+                # first project the 3D cloud objects onto x-y plane and use this 2D field to work out the translation speed
+                dx, dy, amp = correlate(np.sum(prev_cld_field, axis=0) > 0, np.sum(curr_cld_field, axis=0) > 0)
+            else:
+                dx, dy, amp = correlate(prev_cld_field > 0, curr_cld_field > 0)
             logger.debug('dx, dy, amp: {}, {}, {}'.format(dx, dy, amp))
             # Apply projection - move prev cloud field to where I think it will be based on correlation.
-            proj_cld_field_ss = np.roll(np.roll(prev_cld_field, int(dx), axis=1), int(dy), axis=0)
-            # self.proj_cld_field[time_index] = proj_cld_field_ss
+            # N.B. count backward from last dim -- handles 2d and 3d cases.
+            proj_cld_field_ss = np.roll(np.roll(prev_cld_field, int(dx), axis=-1), int(dy), axis=-2)
 
             if self.store_working:
                 working = (curr_cld_field >= 1).astype(int)
@@ -364,7 +380,7 @@ class Tracker(object):
                 self.all_working['working'].append(working)
 
             # Work out overlaps between projected forward previous cloud field and the current field.
-            prev_labels = range(1, prev_cld_field.max() + 1)
+            prev_labels = range(1, int(prev_cld_field.max()) + 1)
             for prev_label in prev_labels:
                 # N.B. prev_labels work for proj_cld_field as it's just a translation of prev_cld_field.
                 prev_cld = prev_clds[prev_label]
@@ -374,8 +390,13 @@ class Tracker(object):
                         continue
                 # These are labels for the current field.
                 if self.include_touching:
-                    overlapping_labels = set(curr_cld_field[grow(proj_cld_field_ss == prev_label,
-                                                                 self.touching_diagonal)])
+                    if self.track_3d:
+                        overlapping_labels = set(curr_cld_field[grow_3d(proj_cld_field_ss == prev_label,
+                                                                        self.touching_diagonal)])
+                    else:
+                        overlapping_labels = set(curr_cld_field[grow(proj_cld_field_ss == prev_label,
+                                                                     self.touching_diagonal)])
+
                 else:
                     overlapping_labels = set(curr_cld_field[proj_cld_field_ss == prev_label])
                 if 0 in overlapping_labels:
@@ -402,7 +423,6 @@ class Tracker(object):
 
     def group(self):
         """Group clouds into all clouds that are connected throught the next/prev relationships.
-
         :return list: groups of clouds
         """
 
@@ -418,34 +438,6 @@ class Tracker(object):
                         logger.error('Found multiple cloud ids: {}'.format(found_cld.id))
                     found_clds[found_cld.id] = found_cld
         return self.groups
-
-    def cluster(self):
-        for time_index, curr_clds in enumerate(self.clds_at_time):
-            clustered_clouds = {}
-            clusters = []
-            for cld in curr_clds.values():
-                if cld.id in clustered_clouds:
-                    continue
-                clustered_clouds[cld.id] = cld
-                cluster = [cld]
-                test_clds = [cld]
-                while test_clds:
-                    next_test_clds = []
-                    for test_cld in test_clds:
-                        for other_cld in curr_clds.values():
-                            if other_cld in cluster:
-                                continue
-
-                            # TODO: hardcoded.
-                            if dist(test_cld.pos, other_cld.pos) < 10e3:
-                                clustered_clouds[other_cld.id] = other_cld
-                                cluster.append(other_cld)
-                                next_test_clds.append(other_cld)
-                    test_clds = next_test_clds
-                # This is a bit of a clusterf#!?.
-                clusters.append(Cluster(cluster))
-            self.clusters_at_time.append(clusters)
-        return self.clusters_at_time
 
     @staticmethod
     def _find_connected_clouds(cld, frac_method):
