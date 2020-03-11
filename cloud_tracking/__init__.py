@@ -1,2 +1,2 @@
-from cloud_tracking.cloud_tracking import Cloud, CloudGroup, Tracker
-import cloud_tracking.correlated_distance
+from cloud_tracking.tracking import Cloud, CloudGroup, Tracker
+from cloud_tracking.correlated_distance import correlate

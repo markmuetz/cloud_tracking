@@ -5,9 +5,12 @@ from collections import OrderedDict
 import numpy as np
 import pylab as plt
 
-from omnium.utils import cm_to_inch
-
 logger = getLogger('ct.tr_analysis')
+
+
+def cm_to_inch(*vals):
+    return [v / 2.54 for v in vals]
+
 
 
 def output_stats_to_file(expt_name, output_dir, filename, tracker, stats):

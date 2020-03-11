@@ -12,8 +12,8 @@ matplotlib.use('Agg')
 import iris
 
 from cloud_tracking.utils import label_clds
-from cloud_tracking.cloud_tracking import Tracker
-from cloud_tracking.cloud_tracking_analysis import (output_stats_to_file, 
+from cloud_tracking.tracking import Tracker
+from cloud_tracking.cloud_tracking_analysis import (output_stats_to_file,
                                                     generate_stats,
                                                     plot_stats)
 
